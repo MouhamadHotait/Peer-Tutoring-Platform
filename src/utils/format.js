@@ -26,7 +26,14 @@ export function formatTime(timeText) {
     minute: '2-digit',
   })
 }
-
+// '2026-11-14' -> { month: 'NOV', day: 14 } (for calendar tiles)
+export function getMonthAndDay(dateText) {
+  const date = toDate(dateText)
+  return {
+    month: date.toLocaleDateString('en-US', { month: 'short' }).toUpperCase(),
+    day: date.getDate(),
+  }
+}
 // Turns '2026-11-12' into a Date in the user's own time zone
 function toDate(dateText) {
   const [year, month, day] = dateText.split('-').map(Number)

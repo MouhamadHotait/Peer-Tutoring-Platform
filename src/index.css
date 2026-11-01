@@ -226,7 +226,33 @@
       var(--color-accent-200) 50%, var(--color-accent-100) 100%);
     color: var(--color-accent-900);
   }
+  /* ---------- Calendar tile: glossy month strip (NOV / 14) ---------- */
+  .aero-calendar-month {
+    background: linear-gradient(180deg, var(--color-brand-400) 0%, var(--color-brand-600) 49%,
+      var(--color-brand-700) 50%, var(--color-brand-600) 100%);
+    color: #ffffff;
+  }
 
+  /* ---------- List row with the Windows 7 light-blue hover highlight ---------- */
+  .aero-row {
+    border: 1px solid #e2e8f0;
+    border-radius: 3px;
+    transition: background 150ms, border-color 150ms;
+  }
+  .aero-row:hover,
+  .aero-row:focus-visible {
+    outline: none;
+    border-color: #84acdd;
+    background: linear-gradient(180deg, var(--color-brand-50) 0%, var(--color-brand-100) 100%);
+  }
+  .dark .aero-row {
+    border-color: rgba(120,180,255,0.2);
+  }
+  .dark .aero-row:hover,
+  .dark .aero-row:focus-visible {
+    border-color: rgba(120,180,255,0.5);
+    background: rgba(91,181,240,0.12);
+  }
   /* From tablet up: slightly smaller controls, since a mouse is more precise */
   @media (min-width: 48rem) {
     .aero-btn { min-height: 2.25rem; }
