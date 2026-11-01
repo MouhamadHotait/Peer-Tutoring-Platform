@@ -1,12 +1,18 @@
 // Fake database for Phase 1. In Phase 2, this data will come from the backend.
 // Objects reference each other by id (like foreign keys in a database).
 
+// subject is used by the Subject filter on the Session List
 export const courses = [
-  { id: 1, code: 'CSC443', name: 'Web Programming' },
-  { id: 2, code: 'CSC310', name: 'Algorithms and Data Structures' },
-  { id: 3, code: 'MTH201', name: 'Calculus III' },
-  { id: 4, code: 'PHY211', name: 'Physics I' },
-  { id: 5, code: 'ENG202', name: 'Advanced Academic Writing' },
+  { id: 1, code: 'CSC443', name: 'Web Programming', subject: 'Computer Science' },
+  { id: 2, code: 'CSC310', name: 'Algorithms and Data Structures', subject: 'Computer Science' },
+  { id: 3, code: 'MTH201', name: 'Calculus III', subject: 'Mathematics' },
+  { id: 4, code: 'PHY211', name: 'Physics I', subject: 'Physics' },
+  { id: 5, code: 'ENG202', name: 'Advanced Academic Writing', subject: 'English' },
+  { id: 6, code: 'CSC245', name: 'Objects and Data Abstraction', subject: 'Computer Science' },
+  { id: 7, code: 'MTH207', name: 'Discrete Structures', subject: 'Mathematics' },
+  { id: 8, code: 'MKT201', name: 'Principles of Marketing', subject: 'Marketing' },
+  { id: 9, code: 'HTM210', name: 'Introduction to Hospitality', subject: 'Hospitality and Tourism' },
+  { id: 10, code: 'ELE201', name: 'Electric Circuits', subject: 'Engineering' },
 ]
 
 // Users and tutors share one list: a tutor is a user who hosts sessions.
@@ -30,4 +36,6 @@ export const sessions = [
   { id: 6, title: 'Web Programming Project Help', courseId: 1, hostId: 2, type: 'study-group', date: '2026-11-20', time: '19:00', mode: 'online', location: 'https://meet.google.com/xyz-uvwx-rst', capacity: 15, attendeeIds: [1], description: 'Bring your project questions: routing, Tailwind, forms.' },
   { id: 7, title: 'Calculus Study Group', courseId: 3, hostId: 1, type: 'study-group', date: '2026-11-22', time: '10:00', mode: 'in-person', location: 'Library, Room 101', capacity: 6, attendeeIds: [5], description: 'Working through homework sets together.' },
   { id: 8, title: 'Physics Lab Report Review', courseId: 4, hostId: 4, type: 'study-group', date: '2026-11-25', time: '15:00', mode: 'online', location: 'https://zoom.us/j/987654321', capacity: 8, attendeeIds: [2, 3], description: 'Peer review of lab reports before submission.' },
+  { id: 9, title: 'Marketing Case Study Practice', courseId: 8, hostId: 5, type: 'study-group', date: '2026-11-19', time: '13:00', mode: 'in-person', location: 'Business Building, Room 12', capacity: 10, attendeeIds: [2], description: 'We analyze real brand campaigns and prepare for the case exam.' },
+  { id: 10, title: 'Circuits Problem Session', courseId: 10, hostId: 4, type: 'tutoring', date: '2026-11-21', time: '16:30', mode: 'online', location: 'https://zoom.us/j/555666777', capacity: 12, attendeeIds: [], description: "Kirchhoff's laws and circuit analysis, step by step." },
 ]

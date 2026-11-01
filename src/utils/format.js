@@ -34,6 +34,13 @@ export function getMonthAndDay(dateText) {
     day: date.getDate(),
   }
 }
+// How many days from today until this date: 0 = today, 1 = tomorrow, negative = past
+export function daysFromToday(dateText) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0) // start of today, so the time of day doesn't matter
+  const msPerDay = 24 * 60 * 60 * 1000
+  return Math.round((toDate(dateText) - today) / msPerDay)
+}
 // Turns '2026-11-12' into a Date in the user's own time zone
 function toDate(dateText) {
   const [year, month, day] = dateText.split('-').map(Number)
