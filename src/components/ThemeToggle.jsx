@@ -12,7 +12,7 @@ function ThemeToggle() {
     <button
       type="button"
       onClick={() => setIsDark(!isDark)}
-      className="rounded-full p-2 text-xl hover:bg-brand-100 dark:hover:bg-slate-700"
+      className="flex h-11 w-11 items-center justify-center rounded-full border border-white/50 bg-linear-to-b from-white/40 to-white/10 text-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] md:h-9 md:w-9"
       aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
     >
       {isDark ? '☀️' : '🌙'}

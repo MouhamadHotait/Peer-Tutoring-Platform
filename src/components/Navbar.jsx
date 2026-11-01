@@ -17,18 +17,20 @@ function Navbar() {
     navigate('/')
   }
 
-  const linkClass = ({ isActive }) =>
-    isActive
-      ? 'font-semibold text-brand-600 dark:text-brand-300'
-      : 'text-gray-700 hover:text-brand-600 dark:text-gray-200 dark:hover:text-brand-300'
+  // Shared look for every menu item: tall on phones (easy to tap), compact from md: up
+  const itemBase =
+    'aero-glass-text flex min-h-11 items-center rounded border border-transparent px-3.5 md:min-h-9'
+
+  // The current page gets the glowing glass pill
+  const linkClass = ({ isActive }) => (isActive ? `${itemBase} aero-nav-active` : itemBase)
 
   return (
-    <header className="border-b border-white/50 bg-white/70 backdrop-blur-md dark:border-slate-700 dark:bg-slate-900/70">
+    <header className="aero-glass sticky top-0 z-20 rounded-none border-x-0 border-t-0">
       <nav
-        className="mx-auto flex max-w-6xl flex-wrap items-center justify-between px-4 py-3"
+        className="mx-auto flex max-w-6xl flex-wrap items-center justify-between px-4 py-2"
         aria-label="Main navigation"
       >
-        <Link to="/" onClick={closeMenu} className="text-xl font-bold text-brand-600 dark:text-brand-300">
+        <Link to="/" onClick={closeMenu} className="aero-glass-text text-xl font-bold">
           Null & Void
         </Link>
 
@@ -38,7 +40,7 @@ function Navbar() {
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="rounded-lg p-2 text-2xl text-gray-700 md:hidden dark:text-gray-200"
+            className="aero-glass-text flex h-11 w-11 items-center justify-center rounded border border-white/50 bg-linear-to-b from-white/40 to-white/10 text-2xl md:hidden"
             aria-expanded={isOpen}
             aria-controls="main-menu"
             aria-label={isOpen ? 'Close menu' : 'Open menu'}
@@ -49,7 +51,7 @@ function Navbar() {
 
         <ul
           id="main-menu"
-          className={`${isOpen ? 'flex' : 'hidden'} w-full flex-col gap-4 pt-4 md:flex md:w-auto md:flex-row md:gap-6 md:pt-0`}
+          className={`${isOpen ? 'flex' : 'hidden'} w-full flex-col gap-1 pt-3 pb-1 md:flex md:w-auto md:flex-row md:gap-1 md:p-0`}
         >
           <li><NavLink to="/" end onClick={closeMenu} className={linkClass}>Home</NavLink></li>
           <li><NavLink to="/sessions" onClick={closeMenu} className={linkClass}>Sessions</NavLink></li>
@@ -60,11 +62,7 @@ function Navbar() {
               <li><NavLink to="/sessions/new" onClick={closeMenu} className={linkClass}>Host a Session</NavLink></li>
               <li><NavLink to="/dashboard" onClick={closeMenu} className={linkClass}>My Sessions</NavLink></li>
               <li>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="text-gray-700 hover:text-brand-600 dark:text-gray-200 dark:hover:text-brand-300"
-                >
+                <button type="button" onClick={handleLogout} className={`${itemBase} w-full`}>
                   Logout ({currentUser.name.split(' ')[0]})
                 </button>
               </li>
