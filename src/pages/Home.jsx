@@ -24,13 +24,14 @@ function Home() {
   return (
     <div className="flex flex-col gap-10 py-4 md:py-8">
       {/* Welcome section, directly on the sky */}
-      <section className="flex flex-col gap-4 md:max-w-2xl">
-        <h1 className="aero-glass-text text-3xl font-semibold md:text-5xl">
+            <section className="flex flex-col gap-4 md:max-w-3xl">
+        <h1 className="aero-glass-text text-3xl font-semibold text-balance md:text-5xl">
           Learn together, one session at a time
         </h1>
-        <p className="aero-glass-text text-lg">
-          Join tutoring sessions and study groups for your LAU courses, or host your own and help
-          other students.
+        <p className="aero-glass-text max-w-2xl text-lg text-balance">
+          Join tutoring sessions and study groups for your LAU courses,{' '}
+          <br className="hidden md:inline" />
+          or host your own and help other students.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Link to="/sessions" className="aero-btn aero-btn-primary w-full sm:w-auto">
