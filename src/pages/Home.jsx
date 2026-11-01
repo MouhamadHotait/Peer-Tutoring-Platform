@@ -1,9 +1,9 @@
-   import { useSessions } from '../context/SessionsContext'
+import { useSessions } from '../context/SessionsContext'
 
-   function Home() {
-     const { sessions } = useSessions()
+function Home() {
+  const { sessions } = useSessions()
 
-     return <h1 className="text-3xl font-bold">Home: {sessions.length} sessions available</h1>
-   }
+  return <h1 className="aero-glass-text text-3xl font-semibold">Home: {sessions.length} sessions available</h1>
+}
 
-   export default Home
+export default Home

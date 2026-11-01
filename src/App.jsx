@@ -11,7 +11,7 @@ import NotFound from './pages/NotFound'
 import Navbar from './components/Navbar'
 function App() {
   return (
-    <div className="min-h-screen bg-linear-to-b from-brand-100 to-white text-gray-900 dark:from-slate-900 dark:to-brand-900 dark:text-gray-100">
+    <div className="aero-sky min-h-screen">
       <Navbar />
     <main className="mx-auto max-w-6xl p-4">
       <Routes>

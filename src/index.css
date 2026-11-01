@@ -3,25 +3,233 @@
 /* Dark mode turns on when the <html> tag has the class "dark" */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Null & Void theme: Frutiger Aero */
-@theme {
+/* =========================================================
+   NULL & VOID COLOR PALETTE (Frutiger Aero)
+   The only place colors are defined. Use them in pages as
+   Tailwind classes (text-brand-800, bg-accent-100...) and in
+   CSS as var(--color-brand-800).
+   "static" makes Tailwind always output these as CSS variables,
+   so the Aero styles below can use them.
+   ========================================================= */
+@theme static {
   --font-sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
-  /* Brand: aqua / sky blue */
-  --color-brand-50: #ecfbff;
-  --color-brand-100: #cff4fe;
-  --color-brand-200: #a5e8fc;
-  --color-brand-300: #67d6f8;
-  --color-brand-400: #22bdee;
-  --color-brand-500: #08a0d4;
-  --color-brand-600: #0a80b2;
-  --color-brand-700: #106690;
-  --color-brand-800: #155476;
-  --color-brand-900: #164664;
+  /* Brand: Windows 7 Aero blue (50 = lightest, 900 = darkest) */
+  --color-brand-50: #eaf6fd;
+  --color-brand-100: #d9f0fc;
+  --color-brand-200: #bee6fd;
+  --color-brand-300: #7cc8f7;
+  --color-brand-400: #5bb5f0;
+  --color-brand-500: #2b8be0;
+  --color-brand-600: #1a78cc;
+  --color-brand-700: #0b5fb0;
+  --color-brand-800: #0b4f91;
+  --color-brand-900: #0b2f52;
 
-  /* Accent: fresh leaf green */
+  /* Accent: Aero grass green */
+  --color-accent-50: #f5fdee;
+  --color-accent-100: #e1f6cd;
+  --color-accent-200: #cdeeb0;
   --color-accent-300: #a3e66a;
-  --color-accent-400: #7dd33f;
-  --color-accent-500: #5cb82a;
-  --color-accent-600: #46921f;
+  --color-accent-500: #6fb43d;
+  --color-accent-900: #24520f;
+}
+
+/* =========================================================
+   AERO STYLES (Windows 7 / Vista look)
+   Shared by the whole team: use these class names in your
+   components instead of copying the values.
+   ========================================================= */
+@layer components {
+
+  /* ---------- Page background: the sky ---------- */
+  .aero-sky {
+    background:
+      radial-gradient(ellipse 60% 35% at 15% 8%, rgba(255,255,255,0.35), transparent 70%),
+      radial-gradient(ellipse 90% 30% at 50% 108%, rgba(125,211,63,0.6), transparent 70%),
+      linear-gradient(180deg, #1559a8 0%, #2a7fd0 22%, #6bbcf2 50%, #bfe6fb 75%, #eaf8ff 100%);
+  }
+  .dark .aero-sky {
+    background:
+      radial-gradient(ellipse 60% 35% at 15% 8%, rgba(120,190,255,0.15), transparent 70%),
+      radial-gradient(ellipse 90% 30% at 50% 108%, rgba(40,160,140,0.35), transparent 70%),
+      linear-gradient(180deg, #050d1f 0%, #0b2347 35%, #103a6b 70%, #145087 100%);
+  }
+
+  /* ---------- Blue glass with the shine line across the middle ---------- */
+  .aero-glass {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.18) 50%,
+        rgba(255,255,255,0.06) 50.5%, rgba(255,255,255,0.22) 100%),
+      rgba(40,120,200,0.3);
+    backdrop-filter: blur(14px) saturate(160%);
+    border: 1px solid rgba(0,30,70,0.5);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.7), 0 8px 24px rgba(0,30,70,0.35);
+  }
+  .dark .aero-glass {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 50%,
+        rgba(255,255,255,0.02) 50.5%, rgba(255,255,255,0.08) 100%),
+      rgba(10,30,60,0.55);
+    border-color: rgba(120,180,255,0.25);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 8px 24px rgba(0,0,0,0.5);
+  }
+
+  /* White text that sits directly on the glass or the sky */
+  .aero-glass-text {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0,30,70,0.7);
+  }
+
+  /* White content area inside a glass window */
+  .aero-pane {
+    background: rgba(255,255,255,0.94);
+    border: 1px solid rgba(0,30,70,0.35);
+    border-radius: 3px;
+    color: var(--color-brand-900);
+  }
+  .dark .aero-pane {
+    background: rgba(12,24,42,0.92);
+    border-color: rgba(120,180,255,0.2);
+    color: #e5eefb;
+  }
+
+  /* Current page link in the navbar (glowing glass pill) */
+  .aero-nav-active {
+    border-color: rgba(255,255,255,0.65);
+    background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 50%,
+      rgba(255,255,255,0.05) 51%, rgba(255,255,255,0.22) 100%);
+    box-shadow: inset 0 0 6px rgba(255,255,255,0.45), 0 0 10px rgba(120,200,255,0.7);
+    font-weight: 600;
+  }
+
+  /* ---------- Buttons ---------- */
+  /* Mobile first: 44px tall on phones (easy to tap), 36px from tablet up */
+  .aero-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+    padding: 0 1.1rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: box-shadow 150ms, background 150ms;
+  }
+  .aero-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .aero-btn:focus-visible { outline: 2px solid var(--color-brand-600); outline-offset: 2px; }
+
+  .aero-btn-primary {
+    border-radius: 4px;
+    border: 1px solid var(--color-brand-800);
+    background: linear-gradient(180deg, var(--color-brand-400) 0%, var(--color-brand-600) 49%,
+      var(--color-brand-700) 50%, var(--color-brand-600) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 1px 2px rgba(0,30,70,0.3);
+    color: #ffffff;
+    font-weight: 600;
+    text-shadow: 0 1px 1px rgba(0,30,70,0.6);
+  }
+  .aero-btn-primary:hover:not(:disabled) {
+    background: linear-gradient(180deg, var(--color-brand-300) 0%, var(--color-brand-500) 49%,
+      var(--color-brand-600) 50%, var(--color-brand-500) 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 0 10px rgba(110,200,255,0.9);
+  }
+
+  .aero-btn-secondary {
+    border-radius: 3px;
+    border: 1px solid #707070;
+    background: linear-gradient(180deg, #f6f6f6 0%, #ebebeb 49%, #dddddd 50%, #cfcfcf 100%);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.7);
+    color: #1a1a1a;
+  }
+  .aero-btn-secondary:hover:not(:disabled) {
+    border-color: var(--color-brand-600);
+    background: linear-gradient(180deg, var(--color-brand-50) 0%, var(--color-brand-100) 49%,
+      var(--color-brand-200) 50%, var(--color-brand-200) 100%);
+  }
+  .dark .aero-btn-secondary {
+    border-color: #0f172a;
+    background: linear-gradient(180deg, #5b6778 0%, #424d5c 49%, #343e4b 50%, #3f4a59 100%);
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.12);
+    color: #f1f5f9;
+  }
+  .dark .aero-btn-secondary:hover:not(:disabled) {
+    border-color: var(--color-brand-600);
+    background: linear-gradient(180deg, #4d6f96 0%, #36597f 49%, #2b4a6c 50%, #36597f 100%);
+  }
+
+  .aero-btn-danger {
+    border-radius: 4px;
+    border: 1px solid #7f1710;
+    background: linear-gradient(180deg, #f5978e 0%, #cc2f24 49%, #b02219 50%, #d03a2f 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 1px 2px rgba(80,10,5,0.3);
+    color: #ffffff;
+    font-weight: 600;
+    text-shadow: 0 1px 1px rgba(80,10,5,0.6);
+  }
+  .aero-btn-danger:hover:not(:disabled) {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 0 10px rgba(255,120,100,0.8);
+  }
+
+  /* ---------- Text fields, dropdowns, text areas ---------- */
+  .aero-field {
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+    border-radius: 3px;
+    border: 1px solid #abadb3;
+    border-top-color: #8a8c90;
+    background: #ffffff;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+    color: #111827;
+    font-size: 1rem; /* 16px stops iPhones from zooming in on tap */
+  }
+  .aero-field:focus {
+    outline: none;
+    border-color: var(--color-brand-600);
+    box-shadow: 0 0 0 1px var(--color-brand-200), 0 0 6px rgba(26,120,204,0.45);
+  }
+  .aero-field[aria-invalid="true"] {
+    border-color: #c42b1c;
+    background: #fff8f7;
+  }
+  textarea.aero-field {
+    min-height: 6rem;
+    padding: 0.5rem 0.75rem;
+  }
+  .dark .aero-field {
+    border-color: #3a5577;
+    background: #0f1f35;
+    color: #e5eefb;
+  }
+
+  /* ---------- Badges: Tutoring, Study group, Online, In person ---------- */
+  .aero-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid #a0a0a0;
+    background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 49%, #e2e2e2 50%, #ececec 100%);
+    color: #1f2937;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .aero-badge-online {
+    border-color: var(--color-brand-400);
+    background: linear-gradient(180deg, var(--color-brand-50) 0%, var(--color-brand-100) 49%,
+      var(--color-brand-200) 50%, var(--color-brand-100) 100%);
+    color: var(--color-brand-900);
+  }
+  .aero-badge-inperson {
+    border-color: var(--color-accent-500);
+    background: linear-gradient(180deg, var(--color-accent-50) 0%, var(--color-accent-100) 49%,
+      var(--color-accent-200) 50%, var(--color-accent-100) 100%);
+    color: var(--color-accent-900);
+  }
+
+  /* From tablet up: slightly smaller controls, since a mouse is more precise */
+  @media (min-width: 48rem) {
+    .aero-btn { min-height: 2.25rem; }
+    .aero-field { min-height: 2.5rem; }
+  }
 }

@@ -48,7 +48,7 @@ Demo account: `demo@lau.edu` / `demo1234`
 | Moubarak | Create/Edit Session, My Sessions | `feature/session-form-dashboard` |
 | Yazbek | Login, Register | `feature/login-register` |
 
-Hotait also built the project setup, routing, navbar, theme toggle, mock data, data contexts, shared components, and deployment.
+Hotait also built the project setup, routing, navbar, theme toggle, mock data, data contexts, shared components, the Aero design system, and deployment.
 
 ## How Mock Data Works
 
@@ -64,7 +64,7 @@ Changes appear immediately across the app but reset when the page is refreshed. 
 - Never push to `main`. Work on your branch and open a pull request; the leader reviews and merges.
 - Only edit your own page files and components you create. Ask the leader before changing shared files (`App.jsx`, `Navbar`, `context/`, `data/`, `index.css`).
 - Pages never import `mockData.js` directly: use `useSessions()` and `useAuth()`.
-- Use the shared `Button` and `Input` components and the theme colors (`brand-...`, `accent-...`).
+- Use the shared `Button` and `Input` components, the Aero classes from `index.css` (`aero-glass`, `aero-pane`, `aero-glass-text`, `aero-badge`...), and the palette colors (`brand-...`, `accent-...`). Never hard-code colors.
 - Mobile-first: phone styles first, then `md:` and `lg:`. Add `dark:` classes. Test on phone, iPad, and laptop sizes before a pull request.
 - Every input has a label, every image has alt text.
 - Small commits with clear messages.
