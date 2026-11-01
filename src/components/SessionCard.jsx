@@ -20,7 +20,7 @@ function SessionCard({ session }) {
   return (
     <Link
       to={`/sessions/${session.id}`}
-      className="aero-glass flex flex-col rounded-lg px-1.5 pb-1.5 transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      className="group aero-glass flex flex-col rounded-lg px-1.5 pb-1.5 transition hover:brightness-110 active:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
     >
       {/* Glass title bar with the badges */}
       <div className="flex flex-wrap gap-1.5 px-1 py-2">
@@ -32,7 +32,7 @@ function SessionCard({ session }) {
 
       {/* White content area */}
       <div className="aero-pane flex grow flex-col gap-2 p-3.5">
-        <h3 className="text-lg font-semibold leading-snug">{session.title}</h3>
+        <h3 className="text-lg leading-snug font-semibold group-hover:underline">{session.title}</h3>
         <p className="text-sm font-semibold text-brand-700 dark:text-brand-300">
           {course ? `${course.code} · ${course.name}` : 'Unknown course'}
         </p>
@@ -53,7 +53,20 @@ function SessionCard({ session }) {
               <strong className="text-red-700 dark:text-red-300">Full</strong>
             )}
           </span>
-          <span className="aero-btn aero-btn-primary">View</span>
+
+          {/* Arrow: shows the card opens something. Decoration only, so hidden from screen readers. */}
+          <svg
+            aria-hidden="true"
+            className="h-5 w-5 shrink-0 text-brand-600 transition group-hover:translate-x-0.5 dark:text-brand-300"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9 6l6 6-6 6" />
+          </svg>
         </div>
       </div>
     </Link>
