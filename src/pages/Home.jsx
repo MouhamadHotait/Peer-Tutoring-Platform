@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useSessions } from '../context/SessionsContext'
 import { useAuth } from '../context/AuthContext'
-import { formatLongDate, formatTime, getMonthAndDay } from '../utils/format'
+import { formatLongDate, formatTime } from '../utils/format'
+import DateBadge from '../components/DateBadge'
+import ModePill from '../components/ModePill'
 
 const TYPE_LABELS = {
   tutoring: 'Tutoring',
@@ -24,7 +26,7 @@ function Home() {
   return (
     <div className="flex flex-col gap-10 py-4 md:py-8">
       {/* Welcome section, directly on the sky */}
-            <section className="flex flex-col gap-4 md:max-w-3xl">
+      <section className="flex flex-col gap-4 md:max-w-3xl">
         <h1 className="aero-glass-text text-3xl font-semibold text-balance md:text-5xl">
           Learn together, one session at a time
         </h1>
@@ -61,11 +63,7 @@ function Home() {
                     Next up
                   </span>
                   <span className="aero-badge">{TYPE_LABELS[next.type]}</span>
-                  <span
-                    className={`aero-badge ${next.mode === 'online' ? 'aero-badge-online' : 'aero-badge-inperson'}`}
-                  >
-                    {next.mode === 'online' ? 'Online' : 'In person'}
-                  </span>
+                  <ModePill mode={next.mode} />
                 </div>
 
                 <div className="flex flex-col gap-1">
@@ -114,36 +112,24 @@ function Home() {
                     Also coming up
                   </h3>
                   <ul className="flex flex-col gap-1.5">
-                    {others.map((session) => {
-                      const { month, day } = getMonthAndDay(session.date)
-                      const isOnline = session.mode === 'online'
-                      return (
-                        <li key={session.id}>
-                          <Link to={`/sessions/${session.id}`} className="aero-row flex items-center gap-3 p-2.5">
-                            {/* Calendar tile: decoration only, the date is also in the hidden text */}
-                            <span
-                              aria-hidden="true"
-                              className="flex w-12 shrink-0 flex-col overflow-hidden rounded border border-brand-800 text-center shadow-sm"
-                            >
-                              <span className="aero-calendar-month py-0.5 text-[11px] font-bold">{month}</span>
-                              <span className="bg-white py-0.5 text-xl font-semibold text-brand-900">{day}</span>
-                            </span>
+                    {others.map((session) => (
+                      <li key={session.id}>
+                        <Link to={`/sessions/${session.id}`} className="aero-row flex items-center gap-3 p-2.5">
+                          {/* Calendar tile: decoration only, the date is also in the hidden text */}
+                          <DateBadge date={session.date} />
 
-                            <span className="flex min-w-0 flex-1 flex-col">
-                              <span className="font-semibold">{session.title}</span>
-                              <span className="text-sm text-slate-600 dark:text-slate-300">
-                                <span className="sr-only">{formatLongDate(session.date)}, </span>
-                                {getCourseById(session.courseId)?.code} · {formatTime(session.time)}
-                              </span>
+                          <span className="flex min-w-0 flex-1 flex-col">
+                            <span className="font-semibold">{session.title}</span>
+                            <span className="text-sm text-slate-600 dark:text-slate-300">
+                              <span className="sr-only">{formatLongDate(session.date)}, </span>
+                              {getCourseById(session.courseId)?.code} · {formatTime(session.time)}
                             </span>
+                          </span>
 
-                            <span className={`aero-badge shrink-0 ${isOnline ? 'aero-badge-online' : 'aero-badge-inperson'}`}>
-                              {isOnline ? 'Online' : 'In person'}
-                            </span>
-                          </Link>
-                        </li>
-                      )
-                    })}
+                          <ModePill mode={session.mode} className="shrink-0" />
+                        </Link>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               )}
