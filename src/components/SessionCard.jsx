@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useSessions } from '../context/SessionsContext'
 import { formatDate, formatTime } from '../utils/format'
+import ModePill from './ModePill'
 
 // The text shown on the type badge for each type value in the data
 const TYPE_LABELS = {
@@ -15,7 +16,6 @@ function SessionCard({ session }) {
   const course = getCourseById(session.courseId)
 
   const spotsLeft = session.capacity - session.attendeeIds.length
-  const isOnline = session.mode === 'online'
 
   return (
     <Link
@@ -25,9 +25,7 @@ function SessionCard({ session }) {
       {/* Glass title bar with the badges */}
       <div className="flex flex-wrap gap-1.5 px-1 py-2">
         <span className="aero-badge">{TYPE_LABELS[session.type]}</span>
-        <span className={`aero-badge ${isOnline ? 'aero-badge-online' : 'aero-badge-inperson'}`}>
-          {isOnline ? 'Online' : 'In person'}
-        </span>
+        <ModePill mode={session.mode} />
       </div>
 
       {/* White content area */}
