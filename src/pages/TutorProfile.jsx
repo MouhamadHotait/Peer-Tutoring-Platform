@@ -1,12 +1,14 @@
-
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useSessions } from '../context/SessionsContext'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
 import SessionCard from '../components/SessionCard'
 import MessageWindow from '../components/MessageWindow'
+import Avatar from '../components/Avatar'
 
+// Tutor Profile page: who the tutor is, some stats, and the sessions they host.
 function TutorProfile() {
+  // The tutor id comes from the URL, e.g. /tutors/2 -> "2"
   const { id } = useParams()
   const { sessions, getCourseById } = useSessions()
   const { currentUser, getUserById } = useAuth()
@@ -14,7 +16,8 @@ function TutorProfile() {
 
   const tutor = getUserById(id)
 
-    if (!tutor) {
+  // Wrong id in the URL
+  if (!tutor) {
     return (
       <MessageWindow title="Tutor not found">
         <p>This tutor doesn't exist.</p>
@@ -25,16 +28,19 @@ function TutorProfile() {
     )
   }
 
+  // This tutor's sessions, sorted by date, then time
   const hostedSessions = sessions
     .filter((session) => session.hostId === tutor.id)
     .sort((a, b) =>
       (a.date + a.time).localeCompare(b.date + b.time)
     )
 
+  // Each course only once, even if the tutor hosts several sessions for it
   const courseIds = [
     ...new Set(hostedSessions.map((session) => session.courseId)),
   ]
 
+  // Total attendees across all of this tutor's sessions
   const studentsHelped = hostedSessions.reduce(
     (sum, session) => sum + session.attendeeIds.length,
     0
@@ -43,14 +49,7 @@ function TutorProfile() {
   const isOwnProfile = currentUser?.id === tutor.id
   const firstName = tutor.name.split(' ')[0]
 
-  const initials = tutor.name
-    .split(' ')
-    .filter(Boolean)
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
-
+  // The three numbers shown in the stats row
   const stats = [
     { label: 'Sessions hosted', value: hostedSessions.length },
     { label: 'Courses', value: courseIds.length },
@@ -67,7 +66,9 @@ function TutorProfile() {
         Back
       </Button>
 
+      {/* Two columns on large screens: profile card (1/3) and sessions (2/3) */}
       <div className="grid gap-4 lg:grid-cols-3">
+        {/* Profile card. Its title bar is a <p> so the tutor's name stays the page's first heading (h1). */}
         <section className="aero-glass self-start rounded-lg px-1.5 pb-1.5">
           <p className="aero-glass-text px-2 py-2 font-semibold">
             Tutor profile
@@ -75,12 +76,7 @@ function TutorProfile() {
 
           <div className="aero-pane flex flex-col gap-4 p-4">
             <div className="flex items-center gap-4">
-              <div
-                aria-hidden="true"
-                className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-brand-800 bg-linear-to-b from-brand-300 to-brand-600 text-2xl font-bold text-white"
-              >
-                {initials}
-              </div>
+              <Avatar name={tutor.name} size="large" />
 
               <div className="min-w-0">
                 <h1 className="text-2xl font-bold">
@@ -107,6 +103,8 @@ function TutorProfile() {
               </p>
             )}
 
+            {/* Stats. flex-col-reverse shows the number above its label,
+                while the HTML keeps the label (<dt>) first for screen readers. */}
             <dl className="grid grid-cols-3 gap-2">
               {stats.map((stat) => (
                 <div

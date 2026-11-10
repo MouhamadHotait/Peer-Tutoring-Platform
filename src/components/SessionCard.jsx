@@ -4,7 +4,6 @@ import { formatDate, formatTime } from '../utils/format'
 import ModePill from './ModePill'
 import TypeBadge from './TypeBadge'
 
-
 // A small Aero window showing one session. Usage: <SessionCard session={session} />
 // The whole card is a link to the session's details page.
 function SessionCard({ session }) {
@@ -34,6 +33,7 @@ function SessionCard({ session }) {
           {formatDate(session.date)} · {formatTime(session.time)}
         </p>
 
+        {/* Footer: spots left (or "Full") on the left, arrow on the right */}
         <div className="mt-auto flex items-center justify-between gap-2 border-t border-slate-200 pt-2.5 dark:border-slate-700">
           <span className="text-sm">
             {spotsLeft > 0 ? (

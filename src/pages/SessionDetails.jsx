@@ -8,8 +8,12 @@ import DateBadge from '../components/DateBadge'
 import ModePill from '../components/ModePill'
 import TypeBadge from '../components/TypeBadge'
 import MessageWindow from '../components/MessageWindow'
+import Avatar from '../components/Avatar'
 
+// Session Details page: everything about one session (info, details, attendees, host)
+// plus the actions that fit the current user: edit/cancel, leave, or join.
 function SessionDetails() {
+  // The session id comes from the URL, e.g. /sessions/3 -> "3"
   const { id } = useParams()
 
   const {
@@ -23,9 +27,11 @@ function SessionDetails() {
   const { currentUser, getUserById } = useAuth()
   const navigate = useNavigate()
 
+  // Is the "Cancel session?" modal open?
   const [showCancelModal, setShowCancelModal] = useState(false)
 
-  // Close the cancel modal with the Escape key
+  // Close the cancel modal with the Escape key.
+  // Hooks must stay above the early return below, so they always run in the same order.
   useEffect(() => {
     if (!showCancelModal) return
     const onKey = (e) => {
@@ -37,6 +43,7 @@ function SessionDetails() {
 
   const session = getSessionById(id)
 
+  // Wrong id in the URL, or the session was cancelled
   if (!session) {
     return (
       <MessageWindow title="Session not found">
@@ -50,8 +57,11 @@ function SessionDetails() {
 
   const course = getCourseById(session.courseId)
   const host = getUserById(session.hostId)
+  // Turn attendee ids into user objects, skipping any id that has no user
   const attendees = session.attendeeIds.map(getUserById).filter(Boolean)
   const spotsLeft = session.capacity - session.attendeeIds.length
+
+  // What the current user is to this session (both false when logged out)
   const isHost = currentUser?.id === session.hostId
   const isAttendee = currentUser
     ? session.attendeeIds.includes(currentUser.id)
@@ -67,8 +77,10 @@ function SessionDetails() {
         Back
       </Button>
 
+      {/* Two columns on large screens: main info (2/3) and host + actions (1/3) */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
+          {/* Title window. Its title bar is a <p> so the session title below stays the page's first heading (h1). */}
           <section className="aero-glass rounded-lg px-1.5 pb-1.5">
             <p className="aero-glass-text px-2 py-2 font-semibold">
               Session information
@@ -120,6 +132,7 @@ function SessionDetails() {
             </h2>
 
             <div className="aero-pane p-4">
+              {/* Description list: each <dt> is a label, each <dd> its value */}
               <dl className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <dt className="text-sm text-slate-600 dark:text-slate-300">
@@ -153,7 +166,7 @@ function SessionDetails() {
                     Location
                   </dt>
                   <dd className="font-semibold">
-                                        {session.mode === 'online' ? (
+                    {session.mode === 'online' ? (
                       // Only the host and people who joined can see the link
                       isHost || isAttendee ? (
                         <a
@@ -211,9 +224,7 @@ function SessionDetails() {
                       key={attendee.id}
                       className="flex items-center gap-3"
                     >
-                      <div aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-white">
-                        {attendee.name?.charAt(0).toUpperCase()}
-                      </div>
+                      <Avatar name={attendee.name} size="small" />
                       <span>{attendee.name}</span>
                     </li>
                   ))}
@@ -224,8 +235,14 @@ function SessionDetails() {
         </div>
 
         <div className="flex flex-col gap-4">
-          <section className="aero-glass rounded-lg px-1.5 pb-1.5">
-            <h2 className="aero-glass-text px-2 py-2 font-semibold">
+          <section
+            className="aero-glass rounded-lg px-1.5 pb-1.5"
+            aria-labelledby="host-heading"
+          >
+            <h2
+              id="host-heading"
+              className="aero-glass-text px-2 py-2 font-semibold"
+            >
               Hosted by
             </h2>
 
@@ -233,8 +250,7 @@ function SessionDetails() {
               {host ? (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-3">
-                    <div aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-xl font-bold text-slate-700 dark:bg-slate-700 dark:text-white">
-                    </div>
+                    <Avatar name={host.name} />
 
                     <div>
                       <p className="font-semibold">{host.name}</p>
@@ -257,11 +273,19 @@ function SessionDetails() {
             </div>
           </section>
 
-          <section className="aero-glass rounded-lg px-1.5 pb-1.5">
-            <h2 className="aero-glass-text px-2 py-2 font-semibold">
+          <section
+            className="aero-glass rounded-lg px-1.5 pb-1.5"
+            aria-labelledby="actions-heading"
+          >
+            <h2
+              id="actions-heading"
+              className="aero-glass-text px-2 py-2 font-semibold"
+            >
               Session actions
             </h2>
 
+            {/* Which actions show depends on who is looking:
+                host -> edit/cancel, attendee -> leave, anyone else -> join (if spots are left) */}
             <div className="aero-pane flex flex-col gap-3 p-4">
               {isHost ? (
                 <div className="flex flex-col gap-3">
@@ -316,6 +340,8 @@ function SessionDetails() {
         </div>
       </div>
 
+      {/* Cancel confirmation modal. "Keep session" gets focus first,
+          so pressing Enter by accident doesn't delete the session. */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
@@ -345,6 +371,7 @@ function SessionDetails() {
               <Button
                 variant="danger"
                 onClick={() => {
+                  // Remove it from the mock data, close the modal, go back to the list
                   deleteSession(session.id)
                   setShowCancelModal(false)
                   navigate('/sessions')
