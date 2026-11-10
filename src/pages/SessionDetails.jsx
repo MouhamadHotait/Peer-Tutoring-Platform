@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useSessions } from '../context/SessionsContext'
 import { useAuth } from '../context/AuthContext'
-import { formatLongDate, formatTime, getMonthAndDay } from '../utils/format'
+import { formatLongDate, formatTime } from '../utils/format'
 import Button from '../components/Button'
+import DateBadge from '../components/DateBadge'
+import ModePill from '../components/ModePill'
 
 function SessionDetails() {
   const { id } = useParams()
@@ -71,32 +72,13 @@ function SessionDetails() {
             </h2>
 
             <div className="aero-pane p-4">
-              <div
-                className="mb-4 w-20 overflow-hidden rounded-lg"
-                aria-hidden="true"
-              >
-                <div className="aero-calendar-month px-2 py-1 text-center font-bold">
-                  {getMonthAndDay(session.date).month}
-                </div>
-                <div className="aero-pane py-3 text-center text-3xl font-bold">
-                  {getMonthAndDay(session.date).day}
-                </div>
-              </div>
+              <DateBadge date={session.date} size="large" className="mb-4" />
 
               <div className="mb-3 flex flex-wrap gap-2">
                 <span className="aero-badge">
                   {session.type === 'tutoring' ? 'Tutoring' : 'Study group'}
                 </span>
-
-                <span
-                  className={
-                    session.mode === 'online'
-                      ? 'aero-badge-online'
-                      : 'aero-badge-inperson'
-                  }
-                >
-                  {session.mode === 'online' ? 'Online' : 'In person'}
-                </span>
+                <ModePill mode={session.mode} />
               </div>
 
               <h1 className="text-2xl font-bold md:text-3xl">
