@@ -2,12 +2,8 @@ import { Link } from 'react-router-dom'
 import { useSessions } from '../context/SessionsContext'
 import { formatDate, formatTime } from '../utils/format'
 import ModePill from './ModePill'
+import TypeBadge from './TypeBadge'
 
-// The text shown on the type badge for each type value in the data
-const TYPE_LABELS = {
-  tutoring: 'Tutoring',
-  'study-group': 'Study group',
-}
 
 // A small Aero window showing one session. Usage: <SessionCard session={session} />
 // The whole card is a link to the session's details page.
@@ -24,7 +20,7 @@ function SessionCard({ session }) {
     >
       {/* Glass title bar with the badges */}
       <div className="flex flex-wrap gap-1.5 px-1 py-2">
-        <span className="aero-badge">{TYPE_LABELS[session.type]}</span>
+        <TypeBadge type={session.type} />
         <ModePill mode={session.mode} />
       </div>
 

@@ -4,11 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { formatLongDate, formatTime, daysFromToday } from '../utils/format'
 import DateBadge from '../components/DateBadge'
 import ModePill from '../components/ModePill'
-
-const TYPE_LABELS = {
-  tutoring: 'Tutoring',
-  'study-group': 'Study group',
-}
+import TypeBadge from '../components/TypeBadge'
 
 function Home() {
   const { sessions, getCourseById } = useSessions()
@@ -20,7 +16,7 @@ function Home() {
     .filter((s) => daysFromToday(s.date) >= 0)
     .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
     .slice(0, 3)
-    
+
   // The first one is featured, the rest go in the short list
   const [next, ...others] = upcoming
 
@@ -63,7 +59,7 @@ function Home() {
                   <span className="text-xs font-bold tracking-wider text-brand-700 uppercase dark:text-brand-300">
                     Next up
                   </span>
-                  <span className="aero-badge">{TYPE_LABELS[next.type]}</span>
+                  <TypeBadge type={next.type} />
                   <ModePill mode={next.mode} />
                 </div>
 

@@ -6,6 +6,7 @@ import { formatLongDate, formatTime } from '../utils/format'
 import Button from '../components/Button'
 import DateBadge from '../components/DateBadge'
 import ModePill from '../components/ModePill'
+import TypeBadge from '../components/TypeBadge'
 import MessageWindow from '../components/MessageWindow'
 
 function SessionDetails() {
@@ -77,9 +78,7 @@ function SessionDetails() {
               <DateBadge date={session.date} size="large" className="mb-4" />
 
               <div className="mb-3 flex flex-wrap gap-2">
-                <span className="aero-badge">
-                  {session.type === 'tutoring' ? 'Tutoring' : 'Study group'}
-                </span>
+                <TypeBadge type={session.type} />
                 <ModePill mode={session.mode} />
               </div>
 
@@ -229,7 +228,7 @@ function SessionDetails() {
               {host ? (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-3">
-                                        <div aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-xl font-bold text-slate-700 dark:bg-slate-700 dark:text-white">
+                    <div aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-xl font-bold text-slate-700 dark:bg-slate-700 dark:text-white">
                     </div>
 
                     <div>
