@@ -24,9 +24,19 @@ function SessionDetails() {
 
   const [showCancelModal, setShowCancelModal] = useState(false)
 
+  // Close the cancel modal with the Escape key
+  useEffect(() => {
+    if (!showCancelModal) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') setShowCancelModal(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showCancelModal])
+
   const session = getSessionById(id)
 
-    if (!session) {
+  if (!session) {
     return (
       <MessageWindow title="Session not found">
         <p>This session doesn't exist or was cancelled.</p>
@@ -309,19 +319,21 @@ function SessionDetails() {
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="cancel-title"
+            aria-describedby="cancel-text"
             className="aero-glass w-full max-w-md rounded-lg p-5"
           >
             <h2 id="cancel-title" className="mb-3 text-xl font-bold">
               Cancel session?
             </h2>
 
-            <p className="mb-5">
+            <p id="cancel-text" className="mb-5">
               Are you sure you want to cancel this session? This action cannot be undone.
             </p>
 
             <div className="flex justify-end gap-3">
               <Button
                 variant="secondary"
+                autoFocus
                 onClick={() => setShowCancelModal(false)}
               >
                 Keep session
