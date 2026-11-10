@@ -1,9 +1,8 @@
-
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useSessions } from '../context/SessionsContext'
 import { useAuth } from '../context/AuthContext'
-import { formatDate, formatTime } from '../utils/format'
+import { formatDate, formatTime, daysFromToday } from '../utils/format'
 import SessionCard from '../components/SessionCard'
 import Button from '../components/Button'
 import MessageWindow from '../components/MessageWindow'
@@ -28,7 +27,10 @@ function MySessions() {
   const byDate = (a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)
   const hosting = sessions.filter((s) => s.hostId === currentUser.id).sort(byDate)
   const joined = sessions.filter((s) => s.attendeeIds.includes(currentUser.id)).sort(byDate)
-  const next = [...hosting, ...joined].sort(byDate)[0]
+    // The soonest session that hasn't happened yet (hosted or joined)
+  const next = [...hosting, ...joined]
+    .filter((s) => daysFromToday(s.date) >= 0)
+    .sort(byDate)[0]
   const shown = tab === 'hosting' ? hosting : joined
   const firstName = currentUser.name.split(' ')[0]
 
