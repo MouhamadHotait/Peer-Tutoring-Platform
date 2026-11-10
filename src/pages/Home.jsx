@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useSessions } from '../context/SessionsContext'
 import { useAuth } from '../context/AuthContext'
-import { formatLongDate, formatTime } from '../utils/format'
+import { formatLongDate, formatTime, daysFromToday } from '../utils/format'
 import DateBadge from '../components/DateBadge'
 import ModePill from '../components/ModePill'
 
@@ -14,12 +14,13 @@ function Home() {
   const { sessions, getCourseById } = useSessions()
   const { getUserById } = useAuth()
 
-  // The 3 sessions coming up first, sorted by date, then time.
-  // [...sessions] copies the array first, because sort() changes the array it's called on.
-  const upcoming = [...sessions]
+  // The 3 next sessions that haven't happened yet, sorted by date, then time.
+  // filter() already makes a new array, so sort() doesn't change the original.
+  const upcoming = sessions
+    .filter((s) => daysFromToday(s.date) >= 0)
     .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
     .slice(0, 3)
-
+    
   // The first one is featured, the rest go in the short list
   const [next, ...others] = upcoming
 
