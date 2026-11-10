@@ -5,7 +5,6 @@ import { isValidEmail } from '../utils/validation'
 import Input from '../components/Input'
 import Button from '../components/Button'
 
-
 // Returns an object with one message per invalid field (empty object = all good)
 function validate(values) {
   const errors = {}
