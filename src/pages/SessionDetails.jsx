@@ -67,9 +67,9 @@ function SessionDetails() {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
           <section className="aero-glass rounded-lg px-1.5 pb-1.5">
-            <h2 className="aero-glass-text px-2 py-2 font-semibold">
+            <p className="aero-glass-text px-2 py-2 font-semibold">
               Session information
-            </h2>
+            </p>
 
             <div className="aero-pane p-4">
               <DateBadge date={session.date} size="large" className="mb-4" />
