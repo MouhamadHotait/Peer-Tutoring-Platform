@@ -4,6 +4,7 @@ import { useSessions } from '../context/SessionsContext'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
 import SessionCard from '../components/SessionCard'
+import MessageWindow from '../components/MessageWindow'
 
 function TutorProfile() {
   const { id } = useParams()
@@ -13,20 +14,14 @@ function TutorProfile() {
 
   const tutor = getUserById(id)
 
-  if (!tutor) {
+    if (!tutor) {
     return (
-      <section className="aero-glass rounded-lg px-1.5 pb-1.5">
-        <h1 className="aero-glass-text px-2 py-2 text-2xl font-bold">
-          Tutor not found
-        </h1>
-
-        <div className="aero-pane p-4">
-          <p className="mb-4">This tutor does not exist.</p>
-          <Link to="/sessions" className="aero-btn aero-btn-primary">
-            Browse sessions
-          </Link>
-        </div>
-      </section>
+      <MessageWindow title="Tutor not found">
+        <p>This tutor doesn't exist.</p>
+        <Link to="/sessions" className="aero-btn aero-btn-primary w-full sm:w-auto">
+          Browse sessions
+        </Link>
+      </MessageWindow>
     )
   }
 

@@ -63,8 +63,13 @@ function SessionFormContent({ id }) {
   const [formError, setFormError] = useState('')
 
   function handleChange(field, value) {
-    setForm((prev) => ({ ...prev, [field]: value }))
-    setErrors((prev) => ({ ...prev, [field]: '' }))
+    setForm((prev) => {
+      const next = { ...prev, [field]: value }
+      // A meeting link doesn't fit "In person" (and the reverse), so clear it
+      if (field === 'mode') next.location = ''
+      return next
+    })
+    setErrors((prev) => ({ ...prev, [field]: '', ...(field === 'mode' && { location: '' }) }))
     setFormError('')
   }
 

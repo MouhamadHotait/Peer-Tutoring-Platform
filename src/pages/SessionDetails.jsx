@@ -1,10 +1,13 @@
-
 import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useSessions } from '../context/SessionsContext'
 import { useAuth } from '../context/AuthContext'
-import { formatLongDate, formatTime, getMonthAndDay } from '../utils/format'
+import { formatLongDate, formatTime } from '../utils/format'
 import Button from '../components/Button'
+import DateBadge from '../components/DateBadge'
+import ModePill from '../components/ModePill'
+import TypeBadge from '../components/TypeBadge'
+import MessageWindow from '../components/MessageWindow'
 
 function SessionDetails() {
   const { id } = useParams()
@@ -22,25 +25,26 @@ function SessionDetails() {
 
   const [showCancelModal, setShowCancelModal] = useState(false)
 
+  // Close the cancel modal with the Escape key
+  useEffect(() => {
+    if (!showCancelModal) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') setShowCancelModal(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showCancelModal])
+
   const session = getSessionById(id)
 
   if (!session) {
     return (
-      <section className="aero-glass rounded-lg px-1.5 pb-1.5">
-        <h1 className="aero-glass-text px-2 py-2 text-2xl font-bold">
-          Session not found
-        </h1>
-
-        <div className="aero-pane p-4">
-          <p className="mb-4">
-            This session does not exist or may have been cancelled.
-          </p>
-
-          <Link to="/sessions" className="aero-btn aero-btn-primary">
-            Browse sessions
-          </Link>
-        </div>
-      </section>
+      <MessageWindow title="Session not found">
+        <p>This session doesn't exist or was cancelled.</p>
+        <Link to="/sessions" className="aero-btn aero-btn-primary w-full sm:w-auto">
+          Browse sessions
+        </Link>
+      </MessageWindow>
     )
   }
 
@@ -66,37 +70,16 @@ function SessionDetails() {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
           <section className="aero-glass rounded-lg px-1.5 pb-1.5">
-            <h2 className="aero-glass-text px-2 py-2 font-semibold">
+            <p className="aero-glass-text px-2 py-2 font-semibold">
               Session information
-            </h2>
+            </p>
 
             <div className="aero-pane p-4">
-              <div
-                className="mb-4 w-20 overflow-hidden rounded-lg"
-                aria-hidden="true"
-              >
-                <div className="aero-calendar-month px-2 py-1 text-center font-bold">
-                  {getMonthAndDay(session.date).month}
-                </div>
-                <div className="aero-pane py-3 text-center text-3xl font-bold">
-                  {getMonthAndDay(session.date).day}
-                </div>
-              </div>
+              <DateBadge date={session.date} size="large" className="mb-4" />
 
               <div className="mb-3 flex flex-wrap gap-2">
-                <span className="aero-badge">
-                  {session.type === 'tutoring' ? 'Tutoring' : 'Study group'}
-                </span>
-
-                <span
-                  className={
-                    session.mode === 'online'
-                      ? 'aero-badge-online'
-                      : 'aero-badge-inperson'
-                  }
-                >
-                  {session.mode === 'online' ? 'Online' : 'In person'}
-                </span>
+                <TypeBadge type={session.type} />
+                <ModePill mode={session.mode} />
               </div>
 
               <h1 className="text-2xl font-bold md:text-3xl">
@@ -170,15 +153,20 @@ function SessionDetails() {
                     Location
                   </dt>
                   <dd className="font-semibold">
-                    {session.mode === 'online' ? (
-                      <a
-                        href={session.location}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-brand-700 underline dark:text-brand-300"
-                      >
-                        Open meeting link
-                      </a>
+                                        {session.mode === 'online' ? (
+                      // Only the host and people who joined can see the link
+                      isHost || isAttendee ? (
+                        <a
+                          href={session.location}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand-700 underline dark:text-brand-300"
+                        >
+                          Open meeting link
+                        </a>
+                      ) : (
+                        'Join the session to see the link'
+                      )
                     ) : (
                       session.location
                     )}
@@ -223,7 +211,7 @@ function SessionDetails() {
                       key={attendee.id}
                       className="flex items-center gap-3"
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-white">
+                      <div aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-white">
                         {attendee.name?.charAt(0).toUpperCase()}
                       </div>
                       <span>{attendee.name}</span>
@@ -245,8 +233,7 @@ function SessionDetails() {
               {host ? (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-xl font-bold text-slate-700 dark:bg-slate-700 dark:text-white">
-                      {host.name?.charAt(0).toUpperCase()}
+                    <div aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-xl font-bold text-slate-700 dark:bg-slate-700 dark:text-white">
                     </div>
 
                     <div>
@@ -335,19 +322,21 @@ function SessionDetails() {
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="cancel-title"
+            aria-describedby="cancel-text"
             className="aero-glass w-full max-w-md rounded-lg p-5"
           >
             <h2 id="cancel-title" className="mb-3 text-xl font-bold">
               Cancel session?
             </h2>
 
-            <p className="mb-5">
+            <p id="cancel-text" className="mb-5">
               Are you sure you want to cancel this session? This action cannot be undone.
             </p>
 
             <div className="flex justify-end gap-3">
               <Button
                 variant="secondary"
+                autoFocus
                 onClick={() => setShowCancelModal(false)}
               >
                 Keep session
