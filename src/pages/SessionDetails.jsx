@@ -6,6 +6,7 @@ import { formatLongDate, formatTime } from '../utils/format'
 import Button from '../components/Button'
 import DateBadge from '../components/DateBadge'
 import ModePill from '../components/ModePill'
+import MessageWindow from '../components/MessageWindow'
 
 function SessionDetails() {
   const { id } = useParams()
@@ -25,23 +26,14 @@ function SessionDetails() {
 
   const session = getSessionById(id)
 
-  if (!session) {
+    if (!session) {
     return (
-      <section className="aero-glass rounded-lg px-1.5 pb-1.5">
-        <h1 className="aero-glass-text px-2 py-2 text-2xl font-bold">
-          Session not found
-        </h1>
-
-        <div className="aero-pane p-4">
-          <p className="mb-4">
-            This session does not exist or may have been cancelled.
-          </p>
-
-          <Link to="/sessions" className="aero-btn aero-btn-primary">
-            Browse sessions
-          </Link>
-        </div>
-      </section>
+      <MessageWindow title="Session not found">
+        <p>This session doesn't exist or was cancelled.</p>
+        <Link to="/sessions" className="aero-btn aero-btn-primary w-full sm:w-auto">
+          Browse sessions
+        </Link>
+      </MessageWindow>
     )
   }
 
