@@ -153,15 +153,20 @@ function SessionDetails() {
                     Location
                   </dt>
                   <dd className="font-semibold">
-                    {session.mode === 'online' ? (
-                      <a
-                        href={session.location}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-brand-700 underline dark:text-brand-300"
-                      >
-                        Open meeting link
-                      </a>
+                                        {session.mode === 'online' ? (
+                      // Only the host and people who joined can see the link
+                      isHost || isAttendee ? (
+                        <a
+                          href={session.location}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand-700 underline dark:text-brand-300"
+                        >
+                          Open meeting link
+                        </a>
+                      ) : (
+                        'Join the session to see the link'
+                      )
                     ) : (
                       session.location
                     )}
