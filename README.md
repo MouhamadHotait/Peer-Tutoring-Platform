@@ -3,6 +3,7 @@
 CSC443 – Web Programming, Fall 2026 – Project Phase 1 (Frontend)
 
 **Live site:** https://peer-tutoring-platform-five.vercel.app/
+
 **Repository:** https://github.com/MouhamadHotait/Peer-Tutoring-Platform
 
 ## Team
@@ -71,4 +72,27 @@ Changes appear immediately across the app but reset when the page is refreshed. 
 
 ## Screenshots
 
-_Coming soon._
+### Homepage
+![Homepage](screenshots/home.png)
+
+### Session List with filters
+![Session list filtered to online sessions](screenshots/session-list.png)
+
+### Session Details
+![Session details page](screenshots/session-details.png)
+
+### Tutor Profile
+![Tutor profile page](screenshots/tutor-profile.png)
+
+### Form validation
+![Host a session form showing validation errors](screenshots/form-validation.png)
+
+### My Sessions dashboard
+![My Sessions dashboard](screenshots/my-sessions.png)
+
+### Dark mode
+![Homepage in dark mode](screenshots/dark-mode.png)
+
+### Mobile
+![Mobile view in dark mode](screenshots/mobile-dark.png)
+![Mobile view with the menu open](screenshots/mobile-menu.png)
