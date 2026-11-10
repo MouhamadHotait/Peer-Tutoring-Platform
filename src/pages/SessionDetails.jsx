@@ -207,7 +207,7 @@ function SessionDetails() {
                       key={attendee.id}
                       className="flex items-center gap-3"
                     >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-white">
+                      <div aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-200 font-semibold text-slate-700 dark:bg-slate-700 dark:text-white">
                         {attendee.name?.charAt(0).toUpperCase()}
                       </div>
                       <span>{attendee.name}</span>
@@ -229,8 +229,7 @@ function SessionDetails() {
               {host ? (
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-xl font-bold text-slate-700 dark:bg-slate-700 dark:text-white">
-                      {host.name?.charAt(0).toUpperCase()}
+                                        <div aria-hidden="true" className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-200 text-xl font-bold text-slate-700 dark:bg-slate-700 dark:text-white">
                     </div>
 
                     <div>
