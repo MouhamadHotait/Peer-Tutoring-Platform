@@ -9,9 +9,11 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import NotFound from './pages/NotFound'
 import Navbar from './components/Navbar'
+import ScrollToTop from './components/ScrollToTop'
 function App() {
   return (
     <div className="aero-sky min-h-screen">
+      <ScrollToTop />
       <Navbar />
     <main className="mx-auto max-w-6xl p-4">
       <Routes>
