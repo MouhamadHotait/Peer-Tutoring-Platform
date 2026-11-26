@@ -1,19 +1,29 @@
 // Load environment variables from .env into process.env
 require('dotenv').config();
-const connectDB = require('./config/db');
+
 const express = require('express');
 const cors = require('cors');
+const connectDB = require('./config/db');
+const logger = require('./middleware/logger');
+const { notFound, errorHandler } = require('./middleware/errorHandler');
 
 const app = express();
 
-// --- Middleware ---
+// --- Middleware (runs on every request, in this order) ---
 app.use(cors());          // allow requests from the frontend (different domain)
 app.use(express.json());  // parse JSON request bodies into req.body
+app.use(logger);          // print each request in the terminal
 
-// --- Test route ---
+// --- Routes ---
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
+
+// (teammates' route files will be mounted here)
+
+// --- Error handling (must come AFTER all routes) ---
+app.use(notFound);
+app.use(errorHandler);
 
 // --- Start server (only after the database is connected) ---
 const PORT = process.env.PORT || 5000;
