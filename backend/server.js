@@ -35,9 +35,11 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// (teammates' route files will be mounted here)
-
-// (teammates' route files will be mounted here)
+// Each teammate's routes live in their own file (avoids merge conflicts)
+app.use('/api', require('./routes/homeSessionList'));
+app.use('/api', require('./routes/sessionForm'));     // BEFORE detailsProfile: /sessions/mine must be checked before /sessions/:id
+app.use('/api', require('./routes/detailsProfile'));
+app.use('/api/auth', require('./routes/auth'));
 
 // --- Error handling (must come AFTER all routes) ---
 app.use(notFound);
