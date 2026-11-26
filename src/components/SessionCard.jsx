@@ -1,20 +1,19 @@
 import { Link } from 'react-router-dom'
-import { useSessions } from '../context/SessionsContext'
 import { formatDate, formatTime } from '../utils/format'
 import ModePill from './ModePill'
 import TypeBadge from './TypeBadge'
 
 // A small Aero window showing one session. Usage: <SessionCard session={session} />
+// The session must come from the API with its course populated (session.course is an object).
 // The whole card is a link to the session's details page.
 function SessionCard({ session }) {
-  const { getCourseById } = useSessions()
-  const course = getCourseById(session.courseId)
+  const course = session.course
 
-  const spotsLeft = session.capacity - session.attendeeIds.length
+  const spotsLeft = session.capacity - session.attendees.length
 
   return (
     <Link
-      to={`/sessions/${session.id}`}
+      to={`/sessions/${session._id}`}
       className="group aero-glass flex flex-col rounded-lg px-1.5 pb-1.5 transition hover:brightness-110 active:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
     >
       {/* Glass title bar with the badges */}
