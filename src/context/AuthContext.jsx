@@ -69,6 +69,8 @@ export function AuthProvider({ children }) {
 }
 
 // Shortcut for pages: const { currentUser, login } = useAuth()
+// The hook lives next to its provider on purpose (standard React context pattern)
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext)
 }
