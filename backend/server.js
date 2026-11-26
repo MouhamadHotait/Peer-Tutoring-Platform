@@ -1,6 +1,6 @@
 // Load environment variables from .env into process.env
 require('dotenv').config();
-
+const connectDB = require('./config/db');
 const express = require('express');
 const cors = require('cors');
 
@@ -15,8 +15,11 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// --- Start server ---
+// --- Start server (only after the database is connected) ---
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
 });
