@@ -1,20 +1,51 @@
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useSessions } from '../context/SessionsContext'
-import { useAuth } from '../context/AuthContext'
+import { apiRequest } from '../api/client'
 import { formatLongDate, formatTime, daysFromToday } from '../utils/format'
 import DateBadge from '../components/DateBadge'
 import ModePill from '../components/ModePill'
 import TypeBadge from '../components/TypeBadge'
+import Loading from '../components/Loading'
+import Alert from '../components/Alert'
 
 function Home() {
-  const { sessions, getCourseById } = useSessions()
-  const { getUserById } = useAuth()
+  const [sessions, setSessions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0) // changing it loads the data again
 
-  // The 3 next sessions that haven't happened yet, sorted by date, then time.
-  // filter() already makes a new array, so sort() doesn't change the original.
+  // Load the sessions when the page opens, and again after "Try again"
+  useEffect(() => {
+    let ignore = false // true if the page closes before the answer arrives
+
+    async function load() {
+      try {
+        const data = await apiRequest('/sessions')
+        if (!ignore) setSessions(data)
+      } catch (err) {
+        if (!ignore) setError(err.message)
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      ignore = true
+    }
+  }, [reloadKey])
+
+  // "Try again" button: show the spinner again and re-run the effect above
+  function retry() {
+    setLoading(true)
+    setError('')
+    setReloadKey((key) => key + 1)
+  }
+
+  // The 3 next sessions that haven't happened yet.
+  // The backend already sorts them by date and time, soonest first.
   const upcoming = sessions
     .filter((s) => daysFromToday(s.date) >= 0)
-    .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
     .slice(0, 3)
 
   // The first one is featured, the rest go in the short list
@@ -49,7 +80,11 @@ function Home() {
         </h2>
 
         <div className="aero-pane flex flex-col gap-5 p-4 md:p-5">
-          {!next ? (
+          {loading ? (
+            <Loading text="Loading sessions..." />
+          ) : error ? (
+            <Alert type="error" onRetry={retry}>{error}</Alert>
+          ) : !next ? (
             <p>No sessions yet. Be the first to host one!</p>
           ) : (
             <div className="flex flex-col gap-6 lg:flex-row">
@@ -66,8 +101,8 @@ function Home() {
                 <div className="flex flex-col gap-1">
                   <h3 className="text-2xl leading-tight font-semibold md:text-3xl">{next.title}</h3>
                   <p className="text-sm font-semibold text-brand-700 dark:text-brand-300">
-                    {getCourseById(next.courseId)?.code} · {getCourseById(next.courseId)?.name}
-                    {getUserById(next.hostId) && ` · hosted by ${getUserById(next.hostId).name}`}
+                    {next.course?.code} · {next.course?.name}
+                    {next.host && ` · hosted by ${next.host.name}`}
                   </p>
                 </div>
 
@@ -81,10 +116,10 @@ function Home() {
                     {formatTime(next.time)}
                   </li>
                   <li className="rounded-sm border border-brand-100 bg-brand-50 px-3 py-2 dark:border-white/10 dark:bg-white/5">
-                    {next.capacity - next.attendeeIds.length > 0 ? (
+                    {next.capacity - next.attendees.length > 0 ? (
                       <>
                         <strong>
-                          {next.capacity - next.attendeeIds.length} of {next.capacity}
+                          {next.capacity - next.attendees.length} of {next.capacity}
                         </strong>{' '}
                         spots left
                       </>
@@ -95,7 +130,7 @@ function Home() {
                 </ul>
 
                 <Link
-                  to={`/sessions/${next.id}`}
+                  to={`/sessions/${next._id}`}
                   className="aero-btn aero-btn-primary w-full sm:w-auto sm:self-start"
                 >
                   View session
@@ -110,8 +145,8 @@ function Home() {
                   </h3>
                   <ul className="flex flex-col gap-1.5">
                     {others.map((session) => (
-                      <li key={session.id}>
-                        <Link to={`/sessions/${session.id}`} className="aero-row flex items-center gap-3 p-2.5">
+                      <li key={session._id}>
+                        <Link to={`/sessions/${session._id}`} className="aero-row flex items-center gap-3 p-2.5">
                           {/* Calendar tile: decoration only, the date is also in the hidden text */}
                           <DateBadge date={session.date} />
 
@@ -119,7 +154,7 @@ function Home() {
                             <span className="font-semibold">{session.title}</span>
                             <span className="text-sm text-slate-600 dark:text-slate-300">
                               <span className="sr-only">{formatLongDate(session.date)}, </span>
-                              {getCourseById(session.courseId)?.code} · {formatTime(session.time)}
+                              {session.course?.code} · {formatTime(session.time)}
                             </span>
                           </span>
 

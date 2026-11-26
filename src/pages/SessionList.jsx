@@ -1,8 +1,10 @@
-import { useState } from 'react'
-import { useSessions } from '../context/SessionsContext'
+import { useState, useEffect } from 'react'
+import { apiRequest } from '../api/client'
 import SessionCard from '../components/SessionCard'
 import Input from '../components/Input'
 import Button from '../components/Button'
+import Loading from '../components/Loading'
+import Alert from '../components/Alert'
 import { daysFromToday } from '../utils/format'
 
 // How many days ahead each "When" option covers
@@ -12,7 +14,45 @@ const WHEN_DAYS = { week: 7, month: 30 }
 const NO_FILTERS = { search: '', subject: '', courseId: '', when: '', mode: '' }
 
 function SessionList() {
-  const { sessions, courses, getCourseById } = useSessions()
+  const [sessions, setSessions] = useState([])
+  const [courses, setCourses] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0) // changing it loads the data again
+
+  // Load sessions and courses together when the page opens, and again after "Try again"
+  useEffect(() => {
+    let ignore = false // true if the page closes before the answer arrives
+
+    async function load() {
+      try {
+        const [sessionsData, coursesData] = await Promise.all([
+          apiRequest('/sessions'),
+          apiRequest('/courses'),
+        ])
+        if (!ignore) {
+          setSessions(sessionsData)
+          setCourses(coursesData)
+        }
+      } catch (err) {
+        if (!ignore) setError(err.message)
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      ignore = true
+    }
+  }, [reloadKey])
+
+  // "Try again" button: show the spinner again and re-run the effect above
+  function retry() {
+    setLoading(true)
+    setError('')
+    setReloadKey((key) => key + 1)
+  }
 
   // draft = what's being set in the panel; applied = what the results use
   const [draft, setDraft] = useState(NO_FILTERS)
@@ -43,24 +83,24 @@ function SessionList() {
     setApplied(NO_FILTERS)
   }
 
-  // Returns the sessions that pass a given set of filters, sorted by date and time
+  // Returns the sessions that pass a given set of filters.
+  // The backend already sorts them by date and time, soonest first.
   function filterSessions(filters) {
     const text = filters.search.trim().toLowerCase()
     return sessions
       .filter((session) => {
-        const course = getCourseById(session.courseId)
+        const course = session.course // populated by the backend
         const matchesSearch =
           text === '' ||
           session.title.toLowerCase().includes(text) ||
           session.description.toLowerCase().includes(text)
         const matchesSubject = filters.subject === '' || course?.subject === filters.subject
-        const matchesCourse = filters.courseId === '' || session.courseId === Number(filters.courseId)
+        const matchesCourse = filters.courseId === '' || course?._id === filters.courseId // ids are text
         const days = daysFromToday(session.date)
         const matchesWhen = filters.when === '' || (days >= 0 && days <= WHEN_DAYS[filters.when])
         const matchesMode = filters.mode === '' || session.mode === filters.mode
         return matchesSearch && matchesSubject && matchesCourse && matchesWhen && matchesMode
       })
-      .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
   }
 
   const results = filterSessions(applied) // what's shown
@@ -74,11 +114,9 @@ function SessionList() {
   // How many dropdowns are set, shown on the phone "Filters" button
   const activeDropdowns = ['subject', 'courseId', 'when', 'mode'].filter((key) => draft[key] !== '').length
 
-  // Dropdown contents, built from the data
+  // Dropdown contents, built from the data (courses already come sorted by code)
   const subjects = [...new Set(courses.map((course) => course.subject))].sort()
-  const courseOptions = courses
-    .filter((course) => draft.subject === '' || course.subject === draft.subject)
-    .sort((a, b) => a.code.localeCompare(b.code))
+  const courseOptions = courses.filter((course) => draft.subject === '' || course.subject === draft.subject)
 
   return (
     <div className="flex flex-col gap-6 py-4 md:py-8">
@@ -135,7 +173,7 @@ function SessionList() {
             <Input as="select" id="course" label="Course" value={draft.courseId} onChange={(e) => updateDraft('courseId', e.target.value)}>
               <option value="">All courses</option>
               {courseOptions.map((course) => (
-                <option key={course.id} value={course.id}>
+                <option key={course._id} value={course._id}>
                   {course.code} · {course.name}
                 </option>
               ))}
@@ -171,11 +209,15 @@ function SessionList() {
         </form>
       </section>
 
-      {/* Results */}
-      {results.length > 0 ? (
+      {/* Results: spinner while loading, error with "Try again", then the cards */}
+      {loading ? (
+        <Loading text="Loading sessions..." />
+      ) : error ? (
+        <Alert type="error" onRetry={retry}>{error}</Alert>
+      ) : results.length > 0 ? (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           {results.map((session) => (
-            <SessionCard key={session.id} session={session} />
+            <SessionCard key={session._id} session={session} />
           ))}
         </div>
       ) : (
