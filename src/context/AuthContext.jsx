@@ -1,42 +1,69 @@
 import { createContext, useContext, useState } from 'react'
-import { users as initialUsers } from '../data/mockData'
+import { apiRequest } from '../api/client'
+import { users as mockUsers } from '../data/mockData' // TEMPORARY, see getUserById below
 
 const AuthContext = createContext(null)
 
-export function AuthProvider({ children }) {
-  const [users, setUsers] = useState(initialUsers)
-  const [currentUser, setCurrentUser] = useState(null) // null = nobody logged in
+// On page load, restore the logged-in user saved in the browser (if any)
+function loadSavedUser() {
+  try {
+    const saved = localStorage.getItem('user')
+    return saved ? JSON.parse(saved) : null
+  } catch {
+    return null
+  }
+}
 
-  // LOGIN: find a user with this email and password
-  // Returns { ok: true } or { ok: false, error: '...' }
-  function login(email, password) {
-    const user = users.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    )
-    if (!user) return { ok: false, error: 'Incorrect email or password.' }
+export function AuthProvider({ children }) {
+  const [currentUser, setCurrentUser] = useState(loadSavedUser) // null = nobody logged in
+
+  // Save the token (used by apiRequest) and the user, so a refresh keeps them logged in
+  function saveLogin(user, token) {
+    localStorage.setItem('token', token)
+    localStorage.setItem('user', JSON.stringify(user))
     setCurrentUser(user)
-    return { ok: true }
   }
 
-  // REGISTER: create a new user, then log them in
-  function register(data) {
-    const taken = users.some((u) => u.email.toLowerCase() === data.email.toLowerCase())
-    if (taken) return { ok: false, error: 'An account with this email already exists.' }
+  // LOGIN: backend checks the password with bcrypt and returns { user, token }
+  // Returns { ok: true } or { ok: false, error: '...' } (same shape as Phase 1)
+  async function login(email, password) {
+    try {
+      const data = await apiRequest('/auth/login', { method: 'POST', body: { email, password } })
+      saveLogin(data.user, data.token)
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, error: error.message }
+    }
+  }
 
-    const newUser = { ...data, id: Date.now(), bio: data.bio || '' }
-    setUsers((prev) => [...prev, newUser])
-    setCurrentUser(newUser)
-    return { ok: true }
+  // REGISTER: backend creates the user (password hashed) and returns { user, token }
+  async function register(formData) {
+    try {
+      const data = await apiRequest('/auth/register', { method: 'POST', body: formData })
+      saveLogin(data.user, data.token)
+      return { ok: true }
+    } catch (error) {
+      return { ok: false, error: error.message }
+    }
   }
 
   function logout() {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
     setCurrentUser(null)
   }
 
-  // Used by Session Details and Tutor Profile to show the host's info
-  const getUserById = (id) => users.find((u) => u.id === Number(id))
+  // After editing their profile, the page calls this so the navbar etc. show the new info
+  function updateCurrentUser(user) {
+    localStorage.setItem('user', JSON.stringify(user))
+    setCurrentUser(user)
+  }
 
-  const value = { users, currentUser, login, register, logout, getUserById }
+  // TEMPORARY: keeps Phase 1 pages working until each owner switches to the API.
+  // Delete this (and the mockUsers import) once no page uses getUserById.
+  const getUserById = (id) => mockUsers.find((u) => u.id === Number(id))
+
+  const value = { currentUser, login, register, logout, updateCurrentUser, getUserById }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
