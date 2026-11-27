@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { useSessions } from '../context/SessionsContext'
+import { apiRequest } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { formatLongDate, formatTime } from '../utils/format'
 import Button from '../components/Button'
@@ -9,29 +9,47 @@ import ModePill from '../components/ModePill'
 import TypeBadge from '../components/TypeBadge'
 import MessageWindow from '../components/MessageWindow'
 import Avatar from '../components/Avatar'
+import Loading from '../components/Loading'
+import Alert from '../components/Alert'
 
-// Session Details page: everything about one session (info, details, attendees, host)
-// plus the actions that fit the current user: edit/cancel, leave, or join.
 function SessionDetails() {
-  // The session id comes from the URL, e.g. /sessions/3 -> "3"
   const { id } = useParams()
 
-  const {
-    getSessionById,
-    getCourseById,
-    joinSession,
-    leaveSession,
-    deleteSession,
-  } = useSessions()
-
-  const { currentUser, getUserById } = useAuth()
+  const { currentUser } = useAuth()
   const navigate = useNavigate()
 
-  // Is the "Cancel session?" modal open?
-  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [session, setSession] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
-  // Close the cancel modal with the Escape key.
-  // Hooks must stay above the early return below, so they always run in the same order.
+  const [busyAction, setBusyAction] = useState('')
+  const [actionError, setActionError] = useState('')
+
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelling, setCancelling] = useState(false)
+  const [cancelError, setCancelError] = useState('')
+
+  useEffect(() => {
+    let ignore = false
+
+    async function load() {
+      try {
+        const data = await apiRequest(`/sessions/${id}`)
+        if (!ignore) setSession(data)
+      } catch (err) {
+        if (!ignore) setError(err.message)
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      ignore = true
+    }
+  }, [id, reloadKey])
+
   useEffect(() => {
     if (!showCancelModal) return
     const onKey = (e) => {
@@ -41,9 +59,44 @@ function SessionDetails() {
     return () => window.removeEventListener('keydown', onKey)
   }, [showCancelModal])
 
-  const session = getSessionById(id)
+  function retry() {
+    setLoading(true)
+    setError('')
+    setReloadKey((key) => key + 1)
+  }
 
-  // Wrong id in the URL, or the session was cancelled
+  async function handleAttendance(action) {
+    setBusyAction(action)
+    setActionError('')
+    try {
+      const updated = await apiRequest(`/sessions/${id}/${action}`, { method: 'POST' })
+      setSession(updated)
+    } catch (err) {
+      setActionError(err.message)
+    } finally {
+      setBusyAction('')
+    }
+  }
+
+  async function handleCancel() {
+    setCancelling(true)
+    setCancelError('')
+    try {
+      await apiRequest(`/sessions/${session._id}`, { method: 'DELETE' })
+      setShowCancelModal(false)
+      navigate('/sessions')
+    } catch (err) {
+      setCancelError(err.message)
+      setCancelling(false)
+    }
+  }
+
+  if (loading) return <Loading text="Loading session..." />
+
+  if (error && error !== 'Session not found') {
+    return <Alert type="error" onRetry={retry}>{error}</Alert>
+  }
+
   if (!session) {
     return (
       <MessageWindow title="Session not found">
@@ -55,17 +108,11 @@ function SessionDetails() {
     )
   }
 
-  const course = getCourseById(session.courseId)
-  const host = getUserById(session.hostId)
-  // Turn attendee ids into user objects, skipping any id that has no user
-  const attendees = session.attendeeIds.map(getUserById).filter(Boolean)
-  const spotsLeft = session.capacity - session.attendeeIds.length
+  const { course, host, attendees } = session
+  const spotsLeft = session.capacity - attendees.length
 
-  // What the current user is to this session (both false when logged out)
-  const isHost = currentUser?.id === session.hostId
-  const isAttendee = currentUser
-    ? session.attendeeIds.includes(currentUser.id)
-    : false
+  const isHost = Boolean(currentUser) && currentUser._id === host?._id
+  const isAttendee = attendees.some((attendee) => attendee._id === currentUser?._id)
 
   return (
     <div className="flex flex-col gap-4">
@@ -77,10 +124,8 @@ function SessionDetails() {
         Back
       </Button>
 
-      {/* Two columns on large screens: main info (2/3) and host + actions (1/3) */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="flex flex-col gap-4 lg:col-span-2">
-          {/* Title window. Its title bar is a <p> so the session title below stays the page's first heading (h1). */}
           <section className="aero-glass rounded-lg px-1.5 pb-1.5">
             <p className="aero-glass-text px-2 py-2 font-semibold">
               Session information
@@ -132,7 +177,6 @@ function SessionDetails() {
             </h2>
 
             <div className="aero-pane p-4">
-              {/* Description list: each <dt> is a label, each <dd> its value */}
               <dl className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <dt className="text-sm text-slate-600 dark:text-slate-300">
@@ -167,7 +211,6 @@ function SessionDetails() {
                   </dt>
                   <dd className="font-semibold">
                     {session.mode === 'online' ? (
-                      // Only the host and people who joined can see the link
                       isHost || isAttendee ? (
                         <a
                           href={session.location}
@@ -191,7 +234,7 @@ function SessionDetails() {
                     Capacity
                   </dt>
                   <dd className="font-semibold">
-                    {session.attendeeIds.length} / {session.capacity} joined
+                    {attendees.length} / {session.capacity} joined
                     {spotsLeft <= 0 && (
                       <span className="ml-2 text-red-700 dark:text-red-300">
                         Full
@@ -221,7 +264,7 @@ function SessionDetails() {
                 <ul className="flex flex-col gap-3">
                   {attendees.map((attendee) => (
                     <li
-                      key={attendee.id}
+                      key={attendee._id}
                       className="flex items-center gap-3"
                     >
                       <Avatar name={attendee.name} size="small" />
@@ -261,7 +304,7 @@ function SessionDetails() {
                   </div>
 
                   <Link
-                    to={`/tutors/${host.id}`}
+                    to={`/tutors/${host._id}`}
                     className="aero-btn aero-btn-primary text-center"
                   >
                     View tutor profile
@@ -284,8 +327,6 @@ function SessionDetails() {
               Session actions
             </h2>
 
-            {/* Which actions show depends on who is looking:
-                host -> edit/cancel, attendee -> leave, anyone else -> join (if spots are left) */}
             <div className="aero-pane flex flex-col gap-3 p-4">
               {isHost ? (
                 <div className="flex flex-col gap-3">
@@ -293,7 +334,7 @@ function SessionDetails() {
 
                   <Button
                     variant="secondary"
-                    onClick={() => navigate(`/sessions/${session.id}/edit`)}
+                    onClick={() => navigate(`/sessions/${session._id}/edit`)}
                   >
                     Edit session
                   </Button>
@@ -311,9 +352,10 @@ function SessionDetails() {
 
                   <Button
                     variant="secondary"
-                    onClick={() => leaveSession(session.id, currentUser.id)}
+                    disabled={busyAction !== ''}
+                    onClick={() => handleAttendance('leave')}
                   >
-                    Leave session
+                    {busyAction === 'leave' ? 'Leaving...' : 'Leave session'}
                   </Button>
                 </div>
               ) : spotsLeft > 0 ? (
@@ -322,9 +364,10 @@ function SessionDetails() {
 
                   {currentUser ? (
                     <Button
-                      onClick={() => joinSession(session.id, currentUser.id)}
+                      disabled={busyAction !== ''}
+                      onClick={() => handleAttendance('join')}
                     >
-                      Join session
+                      {busyAction === 'join' ? 'Joining...' : 'Join session'}
                     </Button>
                   ) : (
                     <Button onClick={() => navigate('/login')}>
@@ -335,13 +378,13 @@ function SessionDetails() {
               ) : (
                 <p>This session is full.</p>
               )}
+
+              {actionError && <Alert type="error">{actionError}</Alert>}
             </div>
           </section>
         </div>
       </div>
 
-      {/* Cancel confirmation modal. "Keep session" gets focus first,
-          so pressing Enter by accident doesn't delete the session. */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div
@@ -359,6 +402,12 @@ function SessionDetails() {
               Are you sure you want to cancel this session? This action cannot be undone.
             </p>
 
+            {cancelError && (
+              <div className="mb-5">
+                <Alert type="error">{cancelError}</Alert>
+              </div>
+            )}
+
             <div className="flex justify-end gap-3">
               <Button
                 variant="secondary"
@@ -370,14 +419,10 @@ function SessionDetails() {
 
               <Button
                 variant="danger"
-                onClick={() => {
-                  // Remove it from the mock data, close the modal, go back to the list
-                  deleteSession(session.id)
-                  setShowCancelModal(false)
-                  navigate('/sessions')
-                }}
+                disabled={cancelling}
+                onClick={handleCancel}
               >
-                Yes, cancel
+                {cancelling ? 'Cancelling...' : 'Yes, cancel'}
               </Button>
             </div>
           </div>
