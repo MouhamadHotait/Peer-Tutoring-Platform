@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { useSessions } from '../context/SessionsContext'
+import { apiRequest } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { daysFromToday } from '../utils/format'
 import Input from '../components/Input'
 import Button from '../components/Button'
+import Alert from '../components/Alert'
+import Loading from '../components/Loading'
 import MessageWindow from '../components/MessageWindow'
 
 const EMPTY_FORM = {
@@ -14,7 +16,7 @@ const EMPTY_FORM = {
 
 function toForm(session) {
   return {
-    title: session.title, courseId: String(session.courseId), type: session.type,
+    title: session.title, courseId: session.course?._id ?? '', type: session.type,
     mode: session.mode, location: session.location, date: session.date,
     time: session.time, capacity: String(session.capacity), description: session.description,
   }
@@ -32,8 +34,8 @@ function validate(values, existing) {
   const capacity = Number(values.capacity)
   if (!values.capacity || !Number.isInteger(capacity) || capacity < 2 || capacity > 50) {
     errors.capacity = 'Capacity must be a whole number between 2 and 50.'
-  } else if (existing && capacity < existing.attendeeIds.length) {
-    const count = existing.attendeeIds.length
+  } else if (existing && capacity < existing.attendees.length) {
+    const count = existing.attendees.length
     errors.capacity = `${count} students already joined, so capacity cannot be lower than ${count}.`
   }
   if (!values.location.trim()) {
@@ -49,18 +51,47 @@ function validate(values, existing) {
 // A changing key clears the form when moving between create and edit routes.
 function SessionForm() {
   const { id } = useParams()
-  return <SessionFormContent key={id ?? 'new'} id={id} />
+  const { currentUser } = useAuth()
+  return <SessionFormContent key={`${currentUser?._id ?? 'guest'}:${id ?? 'new'}`} id={id} />
 }
 
 function SessionFormContent({ id }) {
-  const { courses, getSessionById, addSession, updateSession } = useSessions()
   const { currentUser } = useAuth()
   const navigate = useNavigate()
   const isEdit = id !== undefined
-  const existing = isEdit ? getSessionById(id) : null
-  const [form, setForm] = useState(() => existing ? toForm(existing) : { ...EMPTY_FORM })
+  const [courses, setCourses] = useState([])
+  const [existing, setExisting] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState('')
+
+  useEffect(() => {
+    if (!currentUser) return
+    let active = true
+
+    async function loadForm() {
+      try {
+        const [availableCourses, session] = await Promise.all([
+          apiRequest('/courses'),
+          isEdit ? apiRequest(`/sessions/${id}`) : null,
+        ])
+        if (!active) return
+        setCourses(availableCourses)
+        setExisting(session)
+        if (session) setForm(toForm(session))
+      } catch (error) {
+        if (active) setLoadError(error.message)
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    loadForm()
+    return () => { active = false }
+  }, [currentUser, id, isEdit])
 
   function handleChange(field, value) {
     setForm((prev) => {
@@ -73,8 +104,9 @@ function SessionFormContent({ id }) {
     setFormError('')
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
+    if (submitting) return
     const newErrors = validate(form, existing)
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) {
@@ -83,16 +115,21 @@ function SessionFormContent({ id }) {
     }
     setFormError('')
     const data = {
-      title: form.title.trim(), courseId: Number(form.courseId), type: form.type,
+      title: form.title.trim(), course: form.courseId, type: form.type,
       mode: form.mode, location: form.location.trim(), date: form.date,
       time: form.time, capacity: Number(form.capacity), description: form.description.trim(),
     }
-    if (isEdit) {
-      updateSession(existing.id, data)
-      navigate(`/sessions/${existing.id}`)
-    } else {
-      const newId = addSession({ ...data, hostId: currentUser.id })
-      navigate(`/sessions/${newId}`)
+    setSubmitting(true)
+    try {
+      const saved = await apiRequest(isEdit ? `/sessions/${id}` : '/sessions', {
+        method: isEdit ? 'PUT' : 'POST',
+        body: data,
+      })
+      navigate(`/sessions/${saved._id}`)
+    } catch (error) {
+      setFormError(error.message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -106,16 +143,18 @@ function SessionFormContent({ id }) {
       </div>
     </MessageWindow>
   }
-  if (isEdit && !existing) {
+  if (loading) return <Loading />
+  if (isEdit && loadError === 'Session not found') {
     return <MessageWindow title="Session not found">
       <p>This session doesn't exist or was cancelled.</p>
       <Link to="/sessions" className="aero-btn aero-btn-primary w-full sm:w-auto">Browse sessions</Link>
     </MessageWindow>
   }
-  if (isEdit && existing.hostId !== currentUser.id) {
+  if (loadError) return <Alert>{loadError}</Alert>
+  if (isEdit && existing.host?._id !== currentUser._id) {
     return <MessageWindow title="Only the host can edit this session">
       <p>You can only edit sessions you host.</p>
-      <Link to={`/sessions/${existing.id}`} className="aero-btn aero-btn-primary w-full sm:w-auto">Back to session</Link>
+      <Link to={`/sessions/${existing._id}`} className="aero-btn aero-btn-primary w-full sm:w-auto">Back to session</Link>
     </MessageWindow>
   }
 
@@ -136,7 +175,7 @@ function SessionFormContent({ id }) {
             </div>
             <Input as="select" id="courseId" label="Course" value={form.courseId} onChange={(e) => handleChange('courseId', e.target.value)} error={errors.courseId}>
               <option value="">Choose a course</option>
-              {sortedCourses.map((course) => <option key={course.id} value={course.id}>{course.code} · {course.name}</option>)}
+              {sortedCourses.map((course) => <option key={course._id} value={course._id}>{course.code} · {course.name}</option>)}
             </Input>
             <Input as="select" id="type" label="Type" value={form.type} onChange={(e) => handleChange('type', e.target.value)} error={errors.type}>
               <option value="tutoring">Tutoring</option><option value="study-group">Study group</option>
@@ -156,7 +195,9 @@ function SessionFormContent({ id }) {
           </div>
           <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Button variant="secondary" onClick={() => navigate(-1)} className="w-full sm:w-auto">Cancel</Button>
-            <Button type="submit" className="w-full sm:w-auto">{isEdit ? 'Save changes' : 'Create session'}</Button>
+            <Button type="submit" disabled={submitting} className="w-full sm:w-auto">
+              {isEdit ? (submitting ? 'Saving...' : 'Save changes') : (submitting ? 'Creating...' : 'Create session')}
+            </Button>
           </div>
         </form>
       </section>
