@@ -1,23 +1,57 @@
+import { useState, useEffect } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { useSessions } from '../context/SessionsContext'
+import { apiRequest } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import Button from '../components/Button'
 import SessionCard from '../components/SessionCard'
 import MessageWindow from '../components/MessageWindow'
 import Avatar from '../components/Avatar'
+import Loading from '../components/Loading'
+import Alert from '../components/Alert'
 
-// Tutor Profile page: who the tutor is, some stats, and the sessions they host.
 function TutorProfile() {
-  // The tutor id comes from the URL, e.g. /tutors/2 -> "2"
   const { id } = useParams()
-  const { sessions, getCourseById } = useSessions()
-  const { currentUser, getUserById } = useAuth()
+  const { currentUser } = useAuth()
   const navigate = useNavigate()
 
-  const tutor = getUserById(id)
+  const [profile, setProfile] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
-  // Wrong id in the URL
-  if (!tutor) {
+  useEffect(() => {
+    let ignore = false
+
+    async function load() {
+      try {
+        const data = await apiRequest(`/users/${id}`)
+        if (!ignore) setProfile(data)
+      } catch (err) {
+        if (!ignore) setError(err.message)
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    }
+
+    load()
+    return () => {
+      ignore = true
+    }
+  }, [id, reloadKey])
+
+  function retry() {
+    setLoading(true)
+    setError('')
+    setReloadKey((key) => key + 1)
+  }
+
+  if (loading) return <Loading text="Loading profile..." />
+
+  if (error && error !== 'User not found') {
+    return <Alert type="error" onRetry={retry}>{error}</Alert>
+  }
+
+  if (!profile) {
     return (
       <MessageWindow title="Tutor not found">
         <p>This tutor doesn't exist.</p>
@@ -28,31 +62,26 @@ function TutorProfile() {
     )
   }
 
-  // This tutor's sessions, sorted by date, then time
-  const hostedSessions = sessions
-    .filter((session) => session.hostId === tutor.id)
-    .sort((a, b) =>
-      (a.date + a.time).localeCompare(b.date + b.time)
-    )
+  const tutor = profile.user
+  const hostedSessions = profile.sessions
 
-  // Each course only once, even if the tutor hosts several sessions for it
-  const courseIds = [
-    ...new Set(hostedSessions.map((session) => session.courseId)),
+  const courses = [
+    ...new Map(
+      hostedSessions.map((session) => [session.course._id, session.course])
+    ).values(),
   ]
 
-  // Total attendees across all of this tutor's sessions
   const studentsHelped = hostedSessions.reduce(
-    (sum, session) => sum + session.attendeeIds.length,
+    (sum, session) => sum + session.attendees.length,
     0
   )
 
-  const isOwnProfile = currentUser?.id === tutor.id
+  const isOwnProfile = currentUser?._id === tutor._id
   const firstName = tutor.name.split(' ')[0]
 
-  // The three numbers shown in the stats row
   const stats = [
     { label: 'Sessions hosted', value: hostedSessions.length },
-    { label: 'Courses', value: courseIds.length },
+    { label: 'Courses', value: courses.length },
     { label: 'Students joined', value: studentsHelped },
   ]
 
@@ -66,9 +95,7 @@ function TutorProfile() {
         Back
       </Button>
 
-      {/* Two columns on large screens: profile card (1/3) and sessions (2/3) */}
       <div className="grid gap-4 lg:grid-cols-3">
-        {/* Profile card. Its title bar is a <p> so the tutor's name stays the page's first heading (h1). */}
         <section className="aero-glass self-start rounded-lg px-1.5 pb-1.5">
           <p className="aero-glass-text px-2 py-2 font-semibold">
             Tutor profile
@@ -103,8 +130,6 @@ function TutorProfile() {
               </p>
             )}
 
-            {/* Stats. flex-col-reverse shows the number above its label,
-                while the HTML keeps the label (<dt>) first for screen readers. */}
             <dl className="grid grid-cols-3 gap-2">
               {stats.map((stat) => (
                 <div
@@ -127,19 +152,15 @@ function TutorProfile() {
                 Courses tutored
               </h2>
 
-              {courseIds.length === 0 ? (
+              {courses.length === 0 ? (
                 <p>No courses yet.</p>
               ) : (
                 <ul className="flex flex-wrap gap-1.5">
-                  {courseIds.map((courseId) => {
-                    const course = getCourseById(courseId)
-
-                    return (
-                      <li key={courseId} className="aero-badge">
-                        {course?.code || 'Unknown course'}
-                      </li>
-                    )
-                  })}
+                  {courses.map((course) => (
+                    <li key={course._id} className="aero-badge">
+                      {course.code}
+                    </li>
+                  ))}
                 </ul>
               )}
             </div>
@@ -176,7 +197,7 @@ function TutorProfile() {
             <div className="grid gap-4 sm:grid-cols-2">
               {hostedSessions.map((session) => (
                 <SessionCard
-                  key={session.id}
+                  key={session._id}
                   session={session}
                 />
               ))}
