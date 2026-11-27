@@ -1,16 +1,62 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useSessions } from '../context/SessionsContext'
+import { apiRequest } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { formatDate, formatTime, daysFromToday } from '../utils/format'
 import SessionCard from '../components/SessionCard'
 import Button from '../components/Button'
+import Alert from '../components/Alert'
+import Loading from '../components/Loading'
 import MessageWindow from '../components/MessageWindow'
 
 function MySessions() {
-  const { sessions, leaveSession } = useSessions()
   const { currentUser } = useAuth()
+  return <MySessionsContent key={currentUser?._id ?? 'guest'} currentUser={currentUser} />
+}
+
+function MySessionsContent({ currentUser }) {
   const [tab, setTab] = useState('hosting')
+  const [hosting, setHosting] = useState([])
+  const [joined, setJoined] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
+  const [leaveError, setLeaveError] = useState('')
+  const [leavingId, setLeavingId] = useState(null)
+
+  useEffect(() => {
+    if (!currentUser) return
+    let active = true
+
+    async function loadSessions() {
+      try {
+        const data = await apiRequest('/sessions/mine')
+        if (!active) return
+        setHosting(data.hosting)
+        setJoined(data.joined)
+      } catch (error) {
+        if (active) setLoadError(error.message)
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    loadSessions()
+    return () => { active = false }
+  }, [currentUser])
+
+  async function leaveSession(sessionId) {
+    if (leavingId) return
+    setLeavingId(sessionId)
+    setLeaveError('')
+    try {
+      await apiRequest(`/sessions/${sessionId}/leave`, { method: 'POST' })
+      setJoined((previous) => previous.filter((session) => session._id !== sessionId))
+    } catch (error) {
+      setLeaveError(error.message)
+    } finally {
+      setLeavingId(null)
+    }
+  }
 
   if (!currentUser) {
     return <MessageWindow title="Log in to see your sessions">
@@ -23,11 +69,11 @@ function MySessions() {
     </MessageWindow>
   }
 
-  // Keep hosted and joined sessions sorted by date and time.
+  if (loading) return <Loading />
+  if (loadError) return <Alert>{loadError}</Alert>
+
+  // Find the next session across both lists returned by the API.
   const byDate = (a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)
-  const hosting = sessions.filter((s) => s.hostId === currentUser.id).sort(byDate)
-  const joined = sessions.filter((s) => s.attendeeIds.includes(currentUser.id)).sort(byDate)
-    // The soonest session that hasn't happened yet (hosted or joined)
   const next = [...hosting, ...joined]
     .filter((s) => daysFromToday(s.date) >= 0)
     .sort(byDate)[0]
@@ -42,7 +88,7 @@ function MySessions() {
       </div>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Link to="/sessions/new" className="aero-btn aero-btn-primary w-full sm:w-auto">Host a session</Link>
-        <Link to={`/tutors/${currentUser.id}`} className="aero-btn aero-btn-secondary w-full sm:w-auto">View my profile</Link>
+        <Link to={`/tutors/${currentUser._id}`} className="aero-btn aero-btn-secondary w-full sm:w-auto">View my profile</Link>
       </div>
       <section aria-labelledby="overview-title" className="aero-glass rounded-lg px-2 pb-2">
         <h2 id="overview-title" className="aero-glass-text px-1 py-2 text-sm font-semibold">Overview</h2>
@@ -58,6 +104,7 @@ function MySessions() {
         <Button variant={tab === 'hosting' ? 'primary' : 'secondary'} aria-pressed={tab === 'hosting'} onClick={() => setTab('hosting')} className="flex-1 sm:flex-none">Hosting ({hosting.length})</Button>
         <Button variant={tab === 'joined' ? 'primary' : 'secondary'} aria-pressed={tab === 'joined'} onClick={() => setTab('joined')} className="flex-1 sm:flex-none">Joined ({joined.length})</Button>
       </div>
+      {leaveError && <Alert>{leaveError}</Alert>}
       {shown.length === 0 ? (
         <section aria-labelledby="empty-title" className="aero-glass rounded-lg px-2 pb-2">
           <h2 id="empty-title" className="aero-glass-text px-1 py-2 text-sm font-semibold">{tab === 'hosting' ? 'No hosted sessions' : 'No joined sessions'}</h2>
@@ -69,12 +116,15 @@ function MySessions() {
       ) : (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           {shown.map((session) => (
-            <div key={session.id} className="flex flex-col gap-2">
+            <div key={session._id} className="flex flex-col gap-2">
               <SessionCard session={session} />
               {tab === 'hosting' ? (
-                <Link to={`/sessions/${session.id}/edit`} className="aero-btn aero-btn-secondary" aria-label={`Edit ${session.title}`}>Edit</Link>
+                <Link to={`/sessions/${session._id}/edit`} className="aero-btn aero-btn-secondary" aria-label={`Edit ${session.title}`}>Edit</Link>
               ) : (
-                <Button variant="secondary" onClick={() => leaveSession(session.id, currentUser.id)} aria-label={`Leave ${session.title}`}>Leave</Button>
+                <Button variant="secondary" disabled={leavingId !== null} onClick={() => leaveSession(session._id)}
+                  aria-label={`${leavingId === session._id ? 'Leaving' : 'Leave'} ${session.title}`}>
+                  {leavingId === session._id ? 'Leaving...' : 'Leave'}
+                </Button>
               )}
             </div>
           ))}
