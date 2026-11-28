@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useSessions } from '../context/SessionsContext'
+import { apiRequest } from '../api/client'
 import { isValidEmail } from '../utils/validation'
 import Input from '../components/Input'
 import Button from '../components/Button'
+import Alert from '../components/Alert'
 
 // All fields empty at the start
 const EMPTY_FORM = { name: '', email: '', major: '', bio: '', password: '', confirmPassword: '' }
@@ -34,13 +35,47 @@ function validate(values) {
 
 function Register() {
   const { register, currentUser } = useAuth()
-  const { courses } = useSessions()
   const navigate = useNavigate()
 
   const [form, setForm] = useState(EMPTY_FORM)
   const [errors, setErrors] = useState({})
   const [formError, setFormError] = useState('')
   const [showPasswords, setShowPasswords] = useState(false)
+  const [submitting, setSubmitting] = useState(false) // true while waiting for the backend
+
+  // Courses come from the backend; they are only needed to build the Major dropdown
+  const [courses, setCourses] = useState([])
+  const [coursesLoading, setCoursesLoading] = useState(true)
+  const [coursesError, setCoursesError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0) // changing it loads the courses again
+
+  // Load the courses when the page opens, and again after "Try again"
+  useEffect(() => {
+    let ignore = false // true if the page closes before the answer arrives
+
+    async function loadCourses() {
+      try {
+        const data = await apiRequest('/courses')
+        if (!ignore) setCourses(data)
+      } catch (err) {
+        if (!ignore) setCoursesError(err.message)
+      } finally {
+        if (!ignore) setCoursesLoading(false)
+      }
+    }
+
+    loadCourses()
+    return () => {
+      ignore = true
+    }
+  }, [reloadKey])
+
+  // "Try again" button: show the loading state again and re-run the effect above
+  function retryCourses() {
+    setCoursesLoading(true)
+    setCoursesError('')
+    setReloadKey((key) => key + 1)
+  }
 
   // Major options, built from the course subjects (same as SessionList's Subject filter)
   const majors = [...new Set(courses.map((course) => course.subject))].sort()
@@ -52,7 +87,7 @@ function Register() {
     setFormError('')
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault() // stop the page from reloading
 
     const newErrors = validate(form)
@@ -60,22 +95,30 @@ function Register() {
     if (Object.keys(newErrors).length > 0) return // stop: show the errors
 
     setFormError('')
+    setSubmitting(true)
 
-    // Only send what a user object needs (no confirmPassword), cleaned up
-    const result = register({
-      name: form.name.trim(),
-      email: form.email.trim(),
-      major: form.major,
-      bio: form.bio.trim(),
-      password: form.password,
-    })
+    // Only send what the backend needs (no confirmPassword), cleaned up.
+    // await is needed: without it, result would be a Promise and result.ok would be undefined.
+    let result
+    try {
+      result = await register({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        major: form.major,
+        bio: form.bio.trim(),
+        password: form.password,
+      })
+    } finally {
+      setSubmitting(false) // always re-enable the button, even if something goes wrong
+    }
 
     if (!result.ok) {
-      // An already-used email is shown under the Email field, so the user knows what to fix
+      // The backend's "email already in use" message is shown under the Email field,
+      // so the user knows what to fix. Any other problem goes in the top alert.
       if (result.error.toLowerCase().includes('email')) {
         setErrors((prev) => ({ ...prev, email: result.error }))
       } else {
-        setFormError(result.error) // any other problem goes in the top alert
+        setFormError(result.error)
       }
       return
     }
@@ -137,6 +180,13 @@ function Register() {
             </p>
           )}
 
+          {/* The courses could not be loaded: the Major dropdown needs them, so offer a retry */}
+          {coursesError && (
+            <Alert type="error" onRetry={retryCourses}>
+              {coursesError}
+            </Alert>
+          )}
+
           {/* B2 + B3. Field grid: one column on phones, two from tablet */}
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Input
@@ -159,7 +209,7 @@ function Register() {
               error={errors.email}
             />
 
-            {/* Major dropdown, built from the course subjects */}
+            {/* Major dropdown, built from the course subjects; disabled until they have loaded */}
             <Input
               as="select"
               id="major"
@@ -167,8 +217,9 @@ function Register() {
               value={form.major}
               onChange={(e) => handleChange('major', e.target.value)}
               error={errors.major}
+              disabled={coursesLoading || Boolean(coursesError)}
             >
-              <option value="">Choose your major</option>
+              <option value="">{coursesLoading ? 'Loading...' : 'Choose your major'}</option>
               {majors.map((major) => (
                 <option key={major} value={major}>
                   {major}
@@ -226,8 +277,8 @@ function Register() {
             <Link to="/login" className="aero-btn aero-btn-secondary w-full sm:w-auto">
               I already have an account
             </Link>
-            <Button type="submit" className="w-full sm:w-auto">
-              Create account
+            <Button type="submit" className="w-full sm:w-auto" disabled={submitting}>
+              {submitting ? 'Creating account...' : 'Create account'}
             </Button>
           </div>
         </form>

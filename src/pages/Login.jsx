@@ -20,8 +20,9 @@ function Login() {
 
   const [form, setForm] = useState({ email: '', password: '' })
   const [errors, setErrors] = useState({}) // one message per field
-  const [formError, setFormError] = useState('') // message coming from login()
+  const [formError, setFormError] = useState('') // message coming from the backend
   const [showPassword, setShowPassword] = useState(false)
+  const [submitting, setSubmitting] = useState(false) // true while waiting for the backend
 
   // Update one field, and clear its error (and the top alert) while the user types
   function handleChange(field, value) {
@@ -30,18 +31,26 @@ function Login() {
     setFormError('')
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault() // stop the page from reloading
 
     const newErrors = validate(form)
     setErrors(newErrors)
     if (Object.keys(newErrors).length > 0) return // stop: show the errors
 
-    // Our own checks passed: ask the auth context to check the mock users
+    // Our own checks passed: ask the backend to check the credentials.
+    // await is needed: without it, result would be a Promise and result.ok would be undefined.
     setFormError('')
-    const result = login(form.email.trim(), form.password)
+    setSubmitting(true)
+    let result
+    try {
+      result = await login(form.email.trim(), form.password)
+    } finally {
+      setSubmitting(false) // always re-enable the button, even if something goes wrong
+    }
+
     if (!result.ok) {
-      setFormError(result.error) // 'Incorrect email or password.'
+      setFormError(result.error) // the backend's message, e.g. 'Incorrect email or password.'
       return
     }
     navigate('/dashboard') // My Sessions page
@@ -145,8 +154,8 @@ function Login() {
             <Link to="/register" className="aero-btn aero-btn-secondary w-full sm:w-auto">
               Create an account
             </Link>
-            <Button type="submit" className="w-full sm:w-auto">
-              Log in
+            <Button type="submit" className="w-full sm:w-auto" disabled={submitting}>
+              {submitting ? 'Logging in...' : 'Log in'}
             </Button>
           </div>
         </form>
